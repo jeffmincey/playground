@@ -1,0 +1,33 @@
+# Configuration template.
+#
+# Copy to `config.local.toml` and edit. Values here are safe defaults —
+# never put real secrets in this file; it is committed.
+
+[app]
+name = "playground"
+# Free-form label for the deployment: "local", "staging", "production".
+environment = "local"
+# Emitted in logs and any version endpoint.
+version = "0.1.0"
+
+[server]
+host = "127.0.0.1"
+port = 8080
+# Seconds to wait for in-flight requests before shutting down.
+shutdown_timeout = 15
+
+[logging]
+# One of: "debug", "info", "warn", "error".
+level = "info"
+# "text" for humans, "json" for log aggregators.
+format = "text"
+
+[database]
+# Prefer the DATABASE_URL environment variable in deployed environments;
+# this value is the local fallback.
+url = "sqlite:///./playground.db"
+pool_size = 5
+
+[features]
+# Toggles for work in progress. Default new flags to false.
+example_flag = false

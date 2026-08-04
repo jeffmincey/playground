@@ -35,6 +35,9 @@ Describe the expected output here.
 
 Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 
+Non-secret settings live in `config.toml`. Copy it to `config.local.toml` for
+local overrides; environment variables take precedence over both.
+
 ## Development
 
 ```bash
@@ -47,6 +50,7 @@ Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 ```
 .
 ├── README.md
+├── config.toml     # non-secret configuration defaults
 └── src/            # application code
 ```
 

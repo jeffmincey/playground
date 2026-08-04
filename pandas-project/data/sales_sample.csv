@@ -1,0 +1,26 @@
+order_id,order_date,region,product,units,unit_price
+A-1001,2024-01-04,North,Widget,12,9.99
+A-1002,2024-01-11,south,Gizmo,3,49.50
+A-1003,2024-01-18,North ,Widget,8,9.99
+A-1004,2024-01-29,East,Sprocket,25,4.25
+A-1005,2024-02-02,WEST,Gizmo,6,49.50
+A-1006,2024-02-09,North,Doohickey,2,120.00
+A-1007,2024-02-14,South,Widget,18,9.99
+A-1008,2024-02-21,East,Gizmo,4,49.50
+A-1009,2024-02-27,west,Sprocket,40,4.25
+A-1010,2024-03-03,North,Doohickey,1,120.00
+A-1011,2024-03-08,South,Sprocket,15,4.25
+A-1012,2024-03-15,East,Widget,22,9.99
+A-1013,2024-03-19,West,Doohickey,3,120.00
+A-1014,2024-03-25,North,Gizmo,7,49.50
+A-1015,2024-03-30,South,Doohickey,2,120.00
+A-1016,2024-04-05,East,Widget,30,9.99
+A-1017,2024-04-12,West,Gizmo,5,49.50
+A-1018,2024-04-18,North,Sprocket,60,4.25
+A-1019,2024-04-22,South,Widget,14,9.99
+A-1020,2024-04-28,East,Doohickey,4,120.00
+A-1021,not-a-date,West,Widget,9,9.99
+A-1022,2024-05-02,North,Gizmo,,49.50
+A-1023,2024-05-06,South,Sprocket,20,
+A-1024,2024-05-11,East,Widget,16,9.99
+A-1025,2024-05-17,West,Doohickey,2,120.00

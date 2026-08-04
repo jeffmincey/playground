@@ -8,21 +8,22 @@ Early / experimental / stable — say which, so readers know what to expect.
 
 ## Requirements
 
-- Runtime and version (e.g. Node 20+, Python 3.11+)
-- Any system dependencies
+- [Pixi](https://pixi.prefix.dev) — manages the toolchain, so no separate
+  Python install is needed
+- Any system dependencies not available from conda-forge
 
 ## Installation
 
 ```bash
 git clone https://github.com/jeffmincey/playground.git
 cd playground
-# install dependencies
+pixi install
 ```
 
 ## Usage
 
 ```bash
-# the smallest command that produces a useful result
+pixi run start
 ```
 
 Describe the expected output here.
@@ -35,22 +36,23 @@ Describe the expected output here.
 
 Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 
-Non-secret settings live in `config.toml`. Copy it to `config.local.toml` for
-local overrides; environment variables take precedence over both.
-
 ## Development
 
 ```bash
-# run tests
-# run the linter
+pixi run -e dev test
+pixi run -e dev lint
 ```
+
+Tasks are defined in `pixi.toml`; add new ones there rather than documenting
+ad-hoc commands here.
 
 ## Project Layout
 
 ```
 .
 ├── README.md
-├── config.toml     # non-secret configuration defaults
+├── pixi.toml       # environment and task definitions
+├── pixi.lock       # resolved dependencies (commit this)
 └── src/            # application code
 ```
 

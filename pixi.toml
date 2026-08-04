@@ -1,0 +1,37 @@
+# Pixi workspace manifest. https://pixi.prefix.dev
+#
+# Common commands:
+#   pixi install          resolve and install into .pixi/
+#   pixi run start        run a task defined below
+#   pixi shell            drop into the environment
+#   pixi add <pkg>        add a conda dependency and update pixi.lock
+#
+# Commit pixi.lock alongside this file so environments are reproducible.
+
+[workspace]
+name = "playground"
+version = "0.1.0"
+description = "One-sentence description of what this project does and who it's for."
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+python = ">=3.11"
+
+# Packages that only exist on PyPI. Prefer [dependencies] when a conda
+# build is available.
+[pypi-dependencies]
+
+[tasks]
+start = "python -m playground"
+test = "pytest"
+lint = "ruff check ."
+fmt = "ruff format ."
+
+[feature.dev.dependencies]
+pytest = "*"
+ruff = "*"
+
+[environments]
+# The default environment is implicit and holds [dependencies].
+dev = ["dev"]

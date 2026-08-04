@@ -39,12 +39,13 @@ Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 ## Development
 
 ```bash
-pixi run -e dev test
-pixi run -e dev lint
+pixi run test
+pixi run lint
 ```
 
-Tasks are defined in `pixi.toml`; add new ones there rather than documenting
-ad-hoc commands here.
+These resolve to the `dev` environment automatically, since the tasks are
+defined on the `dev` feature. Tasks live in `pixi.toml` — add new ones there
+rather than documenting ad-hoc commands here.
 
 ## Project Layout
 

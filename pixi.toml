@@ -24,13 +24,19 @@ python = ">=3.11"
 
 [tasks]
 start = "python -m playground"
-test = "pytest"
-lint = "ruff check ."
-fmt = "ruff format ."
 
 [feature.dev.dependencies]
 pytest = "*"
 ruff = "*"
+
+# Defined on the dev feature, not at top level, so they are only available in
+# an environment that actually has pytest/ruff. A task in the default
+# environment whose tool is missing falls through to whatever is on the
+# ambient PATH instead of failing.
+[feature.dev.tasks]
+test = "pytest"
+lint = "ruff check ."
+fmt = "ruff format ."
 
 [environments]
 # The default environment is implicit and holds [dependencies].

@@ -1,0 +1,36 @@
+# Pixi manifest for this project. Kept separate from pyproject.toml so the
+# environment resolves purely from conda-forge (no conda->PyPI mapping
+# lookup); pyproject.toml stays the pip-installable package definition.
+# When both files exist, pixi and pixi-kernel use this one.
+
+[workspace]
+name = "sales-report"
+version = "0.1.0"
+description = "Small pandas project that turns a raw sales CSV into summary tables"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+python = ">=3.11"
+pandas = ">=2.2"
+# Required for pixi-kernel to start a Python kernel in this environment.
+ipykernel = "*"
+
+# Puts src/ on the import path for anything run in this environment —
+# including notebook kernels — matching pyproject's pytest pythonpath.
+[activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT/src"
+
+[tasks]
+report = "python -m sales_report data/sales_sample.csv"
+
+[feature.dev.dependencies]
+pytest = ">=8.0"
+ruff = ">=0.6"
+
+[feature.dev.tasks]
+test = "pytest"
+lint = "ruff check ."
+
+[environments]
+dev = ["dev"]

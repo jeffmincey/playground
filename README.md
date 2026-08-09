@@ -41,21 +41,34 @@ Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 ```bash
 pixi run test
 pixi run lint
-pixi run lab   # JupyterLab, with the environment's Python as the kernel
+pixi run lab   # JupyterLab (see Notebooks below)
 ```
 
-These resolve to the `dev` environment automatically, since the tasks are
-defined on the `dev` feature. Tasks live in `pixi.toml` — add new ones there
-rather than documenting ad-hoc commands here.
+`test` and `lint` resolve to the `dev` environment automatically, since those
+tasks are defined on the `dev` feature. Tasks live in `pixi.toml` — add new
+ones there rather than documenting ad-hoc commands here.
+
+## Notebooks
+
+`pixi run lab` starts one JupyterLab for the whole repo, with
+[pixi-kernel](https://github.com/renan-r-santos/pixi-kernel) installed. For a
+notebook, choose the **Pixi (Python)** kernel: it walks up from the
+notebook's directory to the nearest pixi manifest and runs the kernel in that
+project's own environment. Each project therefore declares `ipykernel` in its
+dependencies — keep it when adding projects.
+
+To start a new project, copy the `skeleton/` folder (see its README).
 
 ## Project Layout
 
 ```
 .
 ├── README.md
-├── pixi.toml       # environment and task definitions
-├── pixi.lock       # resolved dependencies (commit this)
-└── src/            # application code
+├── pixi.toml         # root environment: JupyterLab + pixi-kernel launcher
+├── pixi.lock         # resolved dependencies (commit this)
+├── skeleton/         # copy me to start a new project
+├── pandas-project/   # example project with its own environment
+└── src/              # application code
 ```
 
 ## Contributing

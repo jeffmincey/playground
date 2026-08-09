@@ -13,6 +13,17 @@ so it works as a starting point for any "clean a CSV, then aggregate it" job.
 
 ## Installation
 
+With pixi (recommended in this repo — also what notebook kernels use):
+
+```bash
+cd pandas-project
+pixi install
+pixi run report        # summarize the sample CSV
+pixi run test          # run the test suite
+```
+
+Or as a plain pip package:
+
 ```bash
 cd pandas-project
 python3 -m venv .venv

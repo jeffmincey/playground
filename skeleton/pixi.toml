@@ -1,0 +1,22 @@
+# Skeleton project — copy this folder to start a new project:
+#
+#   cp -r skeleton my-project
+#   cd my-project && pixi install
+#
+# Rename the workspace below, then open a notebook here in JupyterLab
+# (started from the repo root with `pixi run lab`) and pick the
+# "Pixi (Python)" kernel: it runs in THIS project's environment.
+
+[workspace]
+name = "skeleton"
+version = "0.1.0"
+description = "Copy me to start a new project."
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+python = ">=3.11"
+# Required for pixi-kernel to start a Python kernel in this environment.
+ipykernel = "*"
+
+[tasks]

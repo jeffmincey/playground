@@ -18,6 +18,11 @@ platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 [dependencies]
 python = ">=3.11"
 jupyterlab = "*"
+# pixi-kernel makes JupyterLab resolve the kernel per notebook: it walks up
+# from the notebook's directory to the nearest pixi manifest and starts the
+# kernel in that project's environment. Each project must depend on ipykernel.
+pixi-kernel = "*"
+ipykernel = "*"
 
 # Packages that only exist on PyPI. Prefer [dependencies] when a conda
 # build is available.

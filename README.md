@@ -41,6 +41,7 @@ Copy `.env.example` to `.env` and fill in values. Never commit real secrets.
 ```bash
 pixi run test
 pixi run lint
+pixi run lab   # JupyterLab, with the environment's Python as the kernel
 ```
 
 These resolve to the `dev` environment automatically, since the tasks are

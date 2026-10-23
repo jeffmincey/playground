@@ -29,6 +29,7 @@
 | D-23 | Modules are peers sharing broadcast values (`M<address>.<signal>`); no master | No single point of failure; nothing new on the bus | Proposed |
 | D-24 | Parked-mode telemetry (10 s `Status` with outputs on, silent otherwise, bursts on change) | One module's overnight load must not hold the others awake | Proposed |
 | D-25 | Rear module on its own fused feed (8 AWG, 50 A) unless a rear auxiliary battery is fitted | Avoids feeding one module through another; `VBAT_EST` corrects for the feed drop | Proposed — Q-16 |
+| D-26 | On this JK, tap CAN-IHS with a T-harness at the aftermarket radio interface's vehicle-side plug; rear lamp signals at the tail-light connector | The interface already occupies the radio connector; no factory wire is cut; the rear module sits next to the tail lights | Proposed — Q-18, Q-19 |
 
 ## Open questions
 
@@ -45,14 +46,17 @@ Answers change the design; listed with the default assumed until answered.
 | Q-7 | Is a higher channel count expected (e.g. rock-light zones)? | Second module on the bus | Whether to lay out an `SSSS` variant |
 | Q-8 | Other vehicles in scope (JL, TJ, trucks) and their bus speeds? | JK only, others via config | Vehicle signal map, bitrate options |
 | Q-9 | Build quantity (1–2 or a small batch)? | 2 | Assembly method |
-| Q-10 | JK model year, automatic or manual, factory radio type, aftermarket headlamps? | 2011+ automatic, factory radio, factory headlamps | CAN-IHS tap point, reverse/gear source, message IDs |
+| Q-10 | ~~JK model year, radio, headlamps?~~ **Answered:** 2016 two-door Rubicon, aftermarket radio, J.W. Speaker LED headlamps and 239 J2 turn signals, RIGID red LED tail lights ([11](11-jeep-jk-integration.md#this-vehicle-2016-wrangler-jk-two-door-rubicon)); transmission not stated and no longer needed | — | CAN-IHS tap point, lamp-circuit inputs |
 | Q-11 | Winch model and its maximum current draw? | 8–12 k lb class, ≤ 500 A | Contactor choice (EV200 vs GV200 class), feed protection |
 | Q-12 | Keep the ARB rocker as the compressor switch, or move it to the panel? | Keep it (IN1), with its indicator on AUX3 | IN1/AUX3 allocation |
 | Q-13 | Under-dash space and firewall route on this JK? | Passenger side, existing grommet | Enclosure shape, harness lengths |
 | Q-14 | Actual temperatures at the candidate mounting spots (glovebox, rear cargo area, engine bay), including a summer crawl and a heat soak after shutdown? | Cab 65 °C (+ closed-glovebox penalty), engine bay 85 °C / 105 °C hot spot | Location choice, M vs M+ on the light-bar slot, enclosure |
 | Q-15 | Where is the ARB twin mounted — under the hood or in the cargo area? | Under the hood → front module AUX1 | Which module drives the relay |
 | Q-16 | Rear auxiliary battery (with a DC-DC charger) planned? | No — rear module on its own feed from the starting battery | Rear feed, fridge shed thresholds |
-| Q-17 | Two-door or four-door JK? | Four-door (~5 m rear feed) | Rear feed gauge and drop |
+| Q-17 | ~~Two-door or four-door?~~ **Answered:** two-door, ~4 m rear feed | — | Rear feed gauge and drop |
+| Q-18 | Which radio and vehicle interface are fitted (make, model; does it output reverse and VSS)? The shared conversation link could not be opened from the design environment. | A PAC RP4-CH11-class interface on the radio connector | CAN-IHS T-tap location, wired fallbacks for reverse and speed |
+| Q-19 | Which RIGID tail light (part number) — does it include the reverse lamp? Is a trailer harness fitted? | Reverse section present, no trailer harness | Rear module reverse and stop/turn taps |
+| Q-20 | Which J.W. Speaker headlight model (J2, Evo 2, …)? | J2 (no anti-flicker harness) | Only the high-beam wire-tap fallback |
 
 ## Roadmap
 

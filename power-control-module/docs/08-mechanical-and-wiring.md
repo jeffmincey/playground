@@ -208,7 +208,7 @@ S/M slots (pin 4 spare); the connector families do not change.
 ## Harness
 
 From `python3 tools/budget.py` (20 °C copper; hot copper is ~15–20 % worse),
-two-module JK layout ([13](13-multi-module-system.md)). "One-way" is the
+two-module layout on the 2016 two-door JK ([13](13-multi-module-system.md)). "One-way" is the
 module-to-load distance; for the lights the drop includes a wired return to a
 chassis ground point.
 
@@ -221,9 +221,9 @@ chassis ground point.
 | Front | Front rock lights (OUT4, S) | 3 | 16 | 2.5 | 0.20 | 1.5 |
 | Front | ARB relay coil (AUX1) | 0.2 | 18 | 3.0 | 0.01 | 0.1 |
 | Front | Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
-| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 5.0 | 0.41 | 3.1 |
-| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 5.0 | 0.22 | 1.6 |
-| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 5.0 | 0.26 | 1.9 |
+| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 4.0 | 0.33 | 2.4 |
+| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 4.0 | 0.17 | 1.3 |
+| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 4.0 | 0.21 | 1.5 |
 | Rear | Rear floods (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
 | Rear | Rear rock lights (OUT2, S) | 4 | 16 | 2.0 | 0.21 | 1.6 |
 | Rear | Fridge (OUT3, S) | 5 | 12 | 1.5 | 0.08 | 0.6 |

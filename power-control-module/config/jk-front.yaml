@@ -43,7 +43,10 @@ inputs:
   IN4: { name: winch_coil, mode: ACTIVE_HIGH, high_v: 4.0, low_v: 2.0 }   # contactor coil +
   IN5: { name: bar_toggle, mode: ACTIVE_LOW }
   IN6: { name: pods_toggle, mode: ACTIVE_LOW }
-  IN7: { name: spare_high_beam_tap, mode: ACTIVE_HIGH }   # only if CAN-IHS high beam fails
+  # Only if the CAN-IHS high-beam bit cannot be decoded. The JK headlamp feeds
+  # carry pulsed voltage (why some LED headlamps need anti-flicker harnesses),
+  # so the input averages over 50 ms instead of reading single samples.
+  IN7: { name: spare_high_beam_tap, mode: ACTIVE_HIGH, average_ms: 50 }
   IN8: { name: spare, mode: DISABLED }
 
 # Vehicle signals. Entries with verified: false are skipped by the compiler
@@ -96,8 +99,11 @@ vehicle_signals:
     byte_order: little
     timeout_ms: 1000
     verified: false
-  # VS6: door_ajar  -- not yet identified; find it by sniffing
-  # VS7: gear / reverse (automatic only) -- not yet identified
+  # Still to find by sniffing (2016 Rubicon):
+  # VS6: transfer_case_4lo -- cluster indicator, so likely on CAN-IHS; useful as an
+  #      "off-road mode" condition for the light bar and rock lights
+  # VS7: lockers_engaged / sway_bar_disconnected -- Rubicon-only indicators
+  # VS8: door_ajar -- rock-light courtesy
 
 obd_polling:
   enabled: false           # also requires the CAN2 TXD solder jumper

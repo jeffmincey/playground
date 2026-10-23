@@ -5,6 +5,19 @@ the vehicle networks, and the mounting location. Anything marked
 *community* comes from owner reverse-engineering, not FCA documentation, and
 must be confirmed on the actual vehicle before a rule depends on it.
 
+## This vehicle: 2016 Wrangler JK two-door Rubicon
+
+| Item | Fitted | What it changes |
+|---|---|---|
+| Model year 2016 | — | Owner reports put the 2011+ JK interior bus at 125 kbit/s CAN-IHS; message IDs still need confirming on this vehicle |
+| Two-door | — | Rear module feed ~4 m (0.33 V at 40 A on 8 AWG, [13](13-multi-module-system.md#power)); small cargo area for the rear module |
+| Rubicon | Factory electric lockers, electronic sway-bar disconnect, 4:1 transfer case | No air lockers, so the ARB twin is purely an air supply. The cluster shows 4LO, locker and sway-bar indicators, so those states are probably on CAN-IHS — worth finding: "in 4LO" makes a good off-road-mode condition for the light bar and rock lights. |
+| Aftermarket radio | Head unit + vehicle interface (model to confirm, Q-18) | The interface sits on the radio connector and on CAN-IHS. Tap CAN-IHS with a T-harness at the interface's vehicle-side plug, so nothing is cut. Interfaces in this class (e.g. PAC RP4-CH11, listed for 2007–2017 Wrangler) also output reverse, vehicle speed (VSS pulses), parking brake and illumination — ready-made wired fallbacks: reverse into an `ACTIVE_HIGH` input, VSS into a `FREQUENCY` input calibrated in pulses per km. |
+| J.W. Speaker LED headlights (model to confirm: J2, Evo 2…) | Factory headlamp circuits | High-beam state comes from the CAN-IHS lamp message, which follows the stalk request and does not care what lamps are fitted. A wire tap is only a fallback, and needs `average_ms`: the JK drives these circuits with pulsed voltage (the reason anti-flicker harnesses exist for some LED headlamps). |
+| J.W. Speaker 239 J2 LED front turn signals | Integrated anti-flicker, per J.W. Speaker | J.W. Speaker notes some JKs still hyperflash with LED lamps; the turn decoder's 0.8–4 Hz band covers both rates. |
+| RIGID red LED tail lights | Model to confirm (Q-19) | The rear module taps reverse, stop/turn and tail at the tail-light connector — confirm the RIGID lamp has a reverse section and which pin carries it. LED lamps can make the JK pulse its lamp-outage checks; the inputs' debounce rejects those. |
+| Transmission | Not stated | Not needed: reverse comes from the lamp circuit either way |
+
 ## Summary
 
 | Interface | Where | Port | Direction |
@@ -200,4 +213,6 @@ stays off.
 | Automatic vs manual | Whether gear is on the bus (automatic); manual uses the reverse wire |
 | Aftermarket headlamps / radio | Can change the lamp and radio-harness signals |
 
-These are open question Q-10 in [10](10-decisions-and-open-questions.md).
+For this vehicle (2016 two-door Rubicon, aftermarket radio, LED lamps) see
+[the table at the top](#this-vehicle-2016-wrangler-jk-two-door-rubicon);
+Q-10 is answered except for the transmission, which no longer matters.

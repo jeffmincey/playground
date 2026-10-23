@@ -19,7 +19,7 @@ not started. Part numbers are candidates until the BOM is frozen — see
 |---|---|
 | Main outputs | 4 high-side solid-state, each slot one of three classes |
 | Classes | **S** 10 A (PROFET+2, PWM) · **M** 20 A (PROFET+2, PWM) · **L** 40 A (discrete FETs + smart driver, reverse-blocking) |
-| JK system | Two modules on one bus: front (glovebox, `MMSS`) — light bar, bumper pods, ditch lights, front rock lights, compressor and winch on AUX; rear (cargo area, `SSSS`) — rear floods, rear rock lights, fridge, camp lights, chase light |
+| JK system | 2016 two-door Rubicon. Two modules on one bus: front (glovebox, `MMSS`) — light bar, bumper pods, ditch lights, front rock lights, compressor and winch on AUX; rear (cargo area, `SSSS`) — rear floods, rear rock lights, fridge, camp lights, chase light |
 | AUX outputs | 4 × 5 A coil drivers: ARB twin compressor relay, winch isolator contactor, indicator, spare |
 | Inputs | 8 × configurable (ground-switched, 12 V-switched, analog 0–16 V, frequency) + ignition/wake |
 | Protection | Hardware short-circuit trip per channel, firmware instantaneous + I²t e-fuse, retries, interlocks, load shed, thermal derating |

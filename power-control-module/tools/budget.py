@@ -251,8 +251,9 @@ def wire_drop_v(current_a: float, awg: int, length_m: float, round_trip: bool) -
     return current_a * AWG_MOHM_PER_M[awg] * metres / 1000
 
 
-# Two-module JK: (module, label, current A, AWG, one-way metres, return wired
-# back to the module's ground point rather than to a chassis ground at the load)
+# Two-module JK (2016 two-door): (module, label, current A, AWG, one-way metres,
+# return wired back to the module's ground point rather than to a chassis
+# ground at the load). The rear feed is ~4 m on a two-door, ~5 m on a four-door.
 EXAMPLE_LOADS = [
     ("Front", "Battery feed to the glovebox module", 60, 6, 3.0, False),
     ("Front", "Light bar (OUT1, M)", 20, 10, 3.5, True),
@@ -261,9 +262,9 @@ EXAMPLE_LOADS = [
     ("Front", "Front rock lights (OUT4, S)", 3, 16, 2.5, True),
     ("Front", "ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
     ("Front", "Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
-    ("Rear", "Battery feed to the rear module, 8 AWG, at rating", 40, 8, 5.0, False),
-    ("Rear", "Same 8 AWG feed at the expected 21 A", 21, 8, 5.0, False),
-    ("Rear", "Battery feed to the rear module, 6 AWG, at rating", 40, 6, 5.0, False),
+    ("Rear", "Battery feed to the rear module, 8 AWG, at rating", 40, 8, 4.0, False),
+    ("Rear", "Same 8 AWG feed at the expected 21 A", 21, 8, 4.0, False),
+    ("Rear", "Battery feed to the rear module, 6 AWG, at rating", 40, 6, 4.0, False),
     ("Rear", "Rear floods (OUT1, S)", 8, 14, 1.5, True),
     ("Rear", "Rear rock lights (OUT2, S)", 4, 16, 2.0, True),
     ("Rear", "Fridge (OUT3, S)", 5, 12, 1.5, True),

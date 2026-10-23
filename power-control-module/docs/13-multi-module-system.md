@@ -12,7 +12,7 @@ the trailer-harness signals next to the module that uses them.
 ```mermaid
 flowchart LR
     BAT["Battery +<br/>(engine bay)"] -->|"80 A fuse<br/>6 AWG, 3 m"| M0
-    BAT -->|"50 A fuse<br/>8 AWG, ~5 m"| M1
+    BAT -->|"50 A fuse<br/>8 AWG, ~4 m"| M1
     AUXB["Rear aux battery<br/>(option)"] -.->|"short feed"| M1
     PANEL["Switch panel<br/>(dash)"] <-->|"CAN1"| M0
     M0 <-->|"trunk cable:<br/>CAN1 + IGN + GND"| M1
@@ -28,7 +28,7 @@ flowchart LR
     DASH["ARB rocker, toggles,<br/>winch sense"] --> M0
     M1 --> RL["Rear floods, rear rock lights,<br/>fridge, camp lights"]
     M1 -->|"AUX"| CH["Chase light"]
-    TRL["Trailer harness,<br/>third brake light, camp switch"] --> M1
+    TRL["Tail-light harness,<br/>third brake light, camp switch"] --> M1
 ```
 
 ## Who does what
@@ -43,7 +43,7 @@ flowchart LR
 | OUT3 | Ditch lights (S) | Fridge (S, low-voltage cut-off) |
 | OUT4 | Front rock lights (S, PWM) | Camp lights (S, PWM) |
 | AUX | ARB relay, winch contactor, rocker indicator, spare | Chase light, spares (ARB relay here instead if the compressor is mounted in the cargo area) |
-| Inputs | ARB rocker, ditch/bar/pods toggles, winch sense ×2, spare | Trailer reverse, third brake light, trailer stop/turn ×2, tail lamps, camp switch |
+| Inputs | ARB rocker, ditch/bar/pods toggles, winch sense ×2, spare | Reverse, stop/turn ×2 and tail lamps from the tail-light connector, third brake light, camp switch |
 | Vehicle CAN | OBD port + CAN-IHS taps (short stubs from the glovebox) | None — reads them through M0 |
 | Power | 6 AWG, 80 A fuse at the battery | Own feed: 8 AWG, 50 A fuse at the battery — or a rear auxiliary battery |
 | Configuration | [`config/jk-front.yaml`](../config/jk-front.yaml) | [`config/jk-rear.yaml`](../config/jk-rear.yaml) |
@@ -52,13 +52,13 @@ flowchart LR
 
 | Rear feed option | For | Against |
 |---|---|---|
-| **Own fused feed from the starting battery** (default): 8 AWG, 50 A fuse or manual-reset breaker at the battery, ~5 m on a 4-door (~4 m on a 2-door) | Simple; no extra battery | 0.41 V drop at the full 40 A (3.1 %), 0.22 V at the expected 21 A; 6 AWG brings 40 A down to 0.26 V. Fridge and camp loads discharge the starting battery (the shed threshold protects it). |
+| **Own fused feed from the starting battery** (default): 8 AWG, 50 A fuse or manual-reset breaker at the battery, ~4 m on this two-door (~5 m on a four-door) | Simple; no extra battery | 0.33 V drop at the full 40 A (2.4 %), 0.17 V at the expected 21 A; 6 AWG brings 40 A down to 0.21 V. Fridge and camp loads discharge the starting battery (the shed threshold protects it). |
 | **Rear auxiliary battery** charged by a DC-DC charger | Short feed; fridge and camp loads never touch the starting battery | Second battery, charger and its wiring; shed thresholds must suit the aux battery's chemistry |
 | Feeding M1 from an M0 output | — | Not recommended: limited to that output's rating, stacks two voltage drops, and M1 loses its own supply (and cannot wake) whenever the output is off |
 
 - **Battery voltage estimate.** Under load the rear module reads its supply
   lower than the battery by `I × R_feed`. With `feed_resistance_mohm`
-  configured (10.3 mΩ for 5 m of 8 AWG), firmware derives `VBAT_EST` and uses
+  configured (8.2 mΩ for 4 m of 8 AWG), firmware derives `VBAT_EST` and uses
   it for load shed, so the fridge cut-off acts on battery voltage rather than
   on cable drop.
 - **Grounds.** M1 grounds to a body point at the rear (12 AWG). The trunk
@@ -71,9 +71,9 @@ Drops from `python3 tools/budget.py` (20 °C copper):
 | Module | Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |
 |---|---|---:|---:|---:|---:|---:|
 | Front | Battery feed to the glovebox module | 60 | 6 | 3.0 | 0.23 | 1.7 |
-| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 5.0 | 0.41 | 3.1 |
-| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 5.0 | 0.22 | 1.6 |
-| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 5.0 | 0.26 | 1.9 |
+| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 4.0 | 0.33 | 2.4 |
+| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 4.0 | 0.17 | 1.3 |
+| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 4.0 | 0.21 | 1.5 |
 
 The output runs for both modules are in [08](08-mechanical-and-wiring.md#harness).
 
@@ -84,7 +84,7 @@ The output runs for both modules are in [08](08-mechanical-and-wiring.md#harness
   4-way at each end for service. Route it along the factory harness path
   under the sill trim, away from seat-belt and SRS wiring; the 8 AWG feed runs
   in its own loom.
-- **Topology:** panel (dash) — M0 — M1, about 5–6 m in total, far inside
+- **Topology:** panel (dash) — M0 — M1, about 4–5 m in total on the two-door, far inside
   CAN's limits at 500 kbit/s. Terminate the two physical ends: the panel and
   M1. Until the panel exists, terminate M0 and M1. With everything
   unpowered, CAN-H to CAN-L must measure ~60 Ω.
@@ -184,8 +184,10 @@ the module (assumed +4 K/W).
 **Rear:**
 
 - Above the floor, away from the tailgate seal and the window drain path;
-  close to the trailer harness, the tailgate harness and the fridge.
-- **Brake signal:** the trailer harness carries combined stop/turn, which
+  close to the tail-light and tailgate harnesses and the fridge. The
+  two-door's cargo area is small: a side wall behind the rear seat is the
+  likely spot — check it with the PLA envelope.
+- **Brake signal:** the tail-light (and any trailer) circuits carry combined stop/turn, which
   needs ~0.7 s to tell braking from a turn signal. The third brake light on
   the spare-tire carrier has its own two-wire harness (reached behind the
   tailgate trim); confirm with a meter that it is live only with the pedal
@@ -197,5 +199,6 @@ the module (assumed +4 K/W).
 ## Open questions for this layout
 
 Q-15 compressor location (under the hood → front module AUX; cargo area →
-rear module AUX), Q-16 rear auxiliary battery, Q-17 two-door or four-door
-(rear feed length) — see [10](10-decisions-and-open-questions.md#open-questions).
+rear module AUX) and Q-16 rear auxiliary battery — see
+[10](10-decisions-and-open-questions.md#open-questions). (Q-17 is answered:
+two-door, ~4 m rear feed.)

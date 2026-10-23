@@ -20,18 +20,22 @@ module:
   current_budget_a: 40
   sleep_after_s: 30
   ign_source: local          # IGN wire in the front-rear trunk cable; M0.IGN is the fallback
-  feed_resistance_mohm: 10.3 # 5 m of 8 AWG: VBAT_EST = VBAT + module current x feed resistance
+  feed_resistance_mohm: 8.2  # 4 m of 8 AWG (two-door): VBAT_EST = VBAT + module current x feed resistance
   engine_running:
     rpm_signal: M0.VS1       # the front module's RPM signal; VBAT fallback as usual
     rpm_threshold: 500
 
 inputs:
-  IN1: { name: trailer_reverse, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
-         debounce_on_ms: 50, debounce_off_ms: 300 }   # rejects trailer-detect pulses
+  # Lamp signals are tapped at the tail-light connector (RIGID LED tail lights);
+  # a trailer harness works the same way if one is fitted. Debounce rejects the
+  # vehicle's lamp-check pulses.
+  IN1: { name: reverse_lamp, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
+         debounce_on_ms: 50, debounce_off_ms: 300 }
   IN2: { name: third_brake_light, mode: ACTIVE_HIGH }  # spare-tire carrier lamp feed:
                                                         # verify it is brake-only with a meter
-  IN3: { name: trailer_left_stop_turn, mode: FREQUENCY }   # combined stop/turn
-  IN4: { name: trailer_right_stop_turn, mode: FREQUENCY }
+  # Combined stop/turn. The band covers normal flashing and LED hyperflash.
+  IN3: { name: left_stop_turn, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
+  IN4: { name: right_stop_turn, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
   IN5: { name: tail_lamps, mode: ACTIVE_HIGH }
   IN6: { name: camp_switch, mode: ACTIVE_LOW }             # switch at the tailgate
   IN7: { name: spare, mode: DISABLED }

@@ -60,7 +60,15 @@ re-purposed by configuration, with no rework.
 | `DISABLED` | Both off | — | Unused input; skipped by the sleep scan |
 
 Thresholds, debounce (default 20 ms on, 50 ms off) and inversion are
-per-input configuration parameters.
+per-input configuration parameters. Two more options cover lamp circuits:
+
+- `average_ms` — decide on the mean voltage over a window instead of single
+  samples, for feeds the vehicle drives with PWM or pulses (JK headlamp
+  circuits carry pulsed voltage; that is why some LED headlamps need
+  anti-flicker harnesses).
+- `turn_band_hz` — the flash-rate band the `FREQUENCY` decoder treats as a
+  turn signal. Default 0.8–4.0 Hz, which covers normal flashing and LED
+  hyperflash (roughly double rate).
 
 ### `+5V_SENS` sensor supply
 
@@ -86,8 +94,9 @@ lighting circuits that are useful triggers.
 Notes from typical vehicles (verify on the target vehicle):
 
 - **Combined stop/turn circuits** need the `FREQUENCY` mode: firmware treats
-  a steady signal for > 700 ms as brake, a 1–2 Hz toggle as turn, and
-  turn + brake as both.
+  a steady signal for > 700 ms as brake, a toggle inside `turn_band_hz` as
+  turn, and turn + brake as both. With LED turn lamps the JK can hyperflash,
+  which doubles the rate; the default band covers it.
 - **Lamp-out / trailer-detect pulses:** many vehicles and trailer-tow modules
   pulse the outputs for a few ms to check for a connected trailer. A 20 ms
   debounce rejects these; increase it if the module sees ghost triggers.
@@ -130,10 +139,10 @@ Rear module (M1, cargo area):
 
 | Input | Mode | Wired to | Used by |
 |---|---|---|---|
-| IN1 | `ACTIVE_HIGH` | Trailer harness reverse circuit | OUT1 rear floods |
+| IN1 | `ACTIVE_HIGH` | Reverse wire at the tail-light connector (or a trailer harness) | OUT1 rear floods |
 | IN2 | `ACTIVE_HIGH` | Third-brake-light feed on the spare-tire carrier (verify brake-only) | AUX1 chase light, instant brake |
-| IN3 | `FREQUENCY` | Trailer harness left stop/turn | Turn / brake decode |
-| IN4 | `FREQUENCY` | Trailer harness right stop/turn | Turn / brake decode |
+| IN3 | `FREQUENCY` | Left stop/turn at the tail-light connector | Turn / brake decode |
+| IN4 | `FREQUENCY` | Right stop/turn at the tail-light connector | Turn / brake decode |
 | IN5 | `ACTIVE_HIGH` | Tail-lamp circuit | AUX1 chase light with the tail lamps |
 | IN6 | `ACTIVE_LOW` | Camp-light switch at the tailgate | OUT4 camp lights |
 | IN7, IN8 | `DISABLED` | Spare | — |

@@ -1,8 +1,11 @@
 # Example configuration: Jeep JK two-module system, REAR module.
-# Power board variant SSSS, module address 1, mounted in the rear cargo area.
-# Rear lighting, fridge feed and chase light; trailer-harness and third-brake-light
-# inputs are local here. Vehicle signals (speed, RPM) come from the front module
-# (jk-front.yaml) over the accessory bus as M0.<signal>.
+# Power board variant SSSS, module address 1, mounted inside the Tuffy 282-01
+# cargo enclosure. Drives the RIGID Chase 90133 pod from the AUX bank and has
+# slots for rear floods, rear rock lights and camp lights if those get fitted
+# (if they never do, an AUX-only build with no main cells is enough).
+# Lamp signals come from the factory tail-light and third-brake-light harnesses.
+# Vehicle signals (speed, RPM) come from the front module (jk-front.yaml) over
+# the accessory bus as M0.<signal>.
 # See ../docs/13-multi-module-system.md and the rule grammar in ../docs/07-firmware.md.
 #
 # Expressions are evaluated left to right with no precedence, at most four
@@ -17,22 +20,21 @@ module:
     termination: true        # rear end of the accessory bus
     host_timeout_ms: 500
   peers: [0]                 # read the front module's broadcast frames
-  current_budget_a: 40
+  current_budget_a: 30
   sleep_after_s: 30
   ign_source: local          # IGN wire in the front-rear trunk cable; M0.IGN is the fallback
-  feed_resistance_mohm: 8.2  # 4 m of 8 AWG (two-door): VBAT_EST = VBAT + module current x feed resistance
+  feed_resistance_mohm: 13.1 # 4 m of 10 AWG: VBAT_EST = VBAT + module current x feed resistance
   engine_running:
     rpm_signal: M0.VS1       # the front module's RPM signal; VBAT fallback as usual
     rpm_threshold: 500
 
 inputs:
-  # Lamp signals are tapped at the tail-light connector (RIGID LED tail lights);
-  # a trailer harness works the same way if one is fitted. Debounce rejects the
-  # vehicle's lamp-check pulses.
+  # Lamp signals tapped at the factory tail-light connectors; debounce rejects
+  # the vehicle's lamp-check pulses.
   IN1: { name: reverse_lamp, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
          debounce_on_ms: 50, debounce_off_ms: 300 }
-  IN2: { name: third_brake_light, mode: ACTIVE_HIGH }  # spare-tire carrier lamp feed:
-                                                        # verify it is brake-only with a meter
+  IN2: { name: third_brake_light, mode: ACTIVE_HIGH,       # spare-tire carrier lamp feed:
+         debounce_on_ms: 10, debounce_off_ms: 50 }          # verify it is brake-only with a meter
   # Combined stop/turn. The band covers normal flashing and LED hyperflash.
   IN3: { name: left_stop_turn, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
   IN4: { name: right_stop_turn, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
@@ -48,7 +50,7 @@ obd_polling:
 
 outputs:
   OUT1:
-    name: rear_floods
+    name: rear_floods        # placeholder until rear floods are fitted
     class: S
     rating_a: 10
     on_host_loss: "RELEASE"
@@ -61,7 +63,7 @@ outputs:
       force_off: "M0.VS2 > 15 for 3000"        # front module's vehicle speed
 
   OUT2:
-    name: rear_rock_lights
+    name: rear_rock_lights   # placeholder
     class: S
     rating_a: 10
     pwm: { frequency_hz: 200, default_duty: 60 }
@@ -77,22 +79,19 @@ outputs:
       force_off: "M0.VS2 > 15 for 3000"
 
   OUT3:
-    name: fridge
+    name: chase_courtesy     # RIGID Chase downward courtesy light (trigger wire, Q-24)
     class: S
-    rating_a: 8
-    retries: 3
+    rating_a: 3
     on_host_loss: "RELEASE"
-    shed_priority: 4             # last to go
+    shed_priority: 3
     shed_ign_off: true
-    shed_v: 12.2                 # protect the starting battery (uses VBAT_EST)
-    shed_delay_s: 120
-    restore_v: 12.8
     rule:
-      behaviour: always          # on unless shed, forced off or tripped
-      force_off: "VIN5 is_on"    # panel button "fridge off"
+      behaviour: follow
+      condition: "IN6 is_on OR VIN7 is_on"
+      max_on_s: 1800
 
   OUT4:
-    name: camp_lights
+    name: camp_lights        # placeholder
     class: S
     rating_a: 10
     pwm: { frequency_hz: 200, default_duty: 80 }
@@ -106,45 +105,55 @@ outputs:
       condition: "IN6 is_on OR VIN4 is_on"
       max_on_s: 7200             # off after 2 h
 
+# RIGID Chase 90133: red halo (running / brake / strobe), 715 lm white
+# reverse/area light, downward courtesy light. Owners report a 6-wire cable
+# (red power/running, black ground, white brake, three more trigger wires);
+# confirm the map on RIGID's 90133 instruction sheet before wiring (Q-24).
+# The light arbitrates between its own modes, so several triggers may be on.
 aux:
   AUX1:
-    name: chase_light            # off-road convoy light, flashes on brake
+    name: chase_power_running    # also the supply for the other functions, if the
+    rating_a: 2                  # sheet confirms red powers the light
+    on_host_loss: "RELEASE"
+    rule:
+      behaviour: follow
+      condition: "IN5 is_on OR IN2 is_on OR IN1 is_on OR VIN6 is_on"
+      force_off: "IGN is_off"
+
+  AUX2:
+    name: chase_brake
+    rating_a: 1
+    rule:
+      behaviour: follow
+      condition: "IN2 is_on"
+
+  AUX3:
+    name: chase_strobe           # off-road use: red strobes to the rear are
+    rating_a: 1                  # restricted on public roads
+    on_host_loss: "OFF"
+    rule:
+      behaviour: follow
+      condition: "VIN6 is_on"
+      force_off: "IGN is_off"
+
+  AUX4:
+    name: chase_reverse_area     # 715 lm white centre
     rating_a: 2
     on_host_loss: "RELEASE"
     rule:
       behaviour: follow
-      condition: "IN5 is_on OR IN2 is_on"      # with the tail lamps, and on brake
-      force_off: "IGN is_off"
-      flash:
-        - { when: "IN2 is_on", pattern: fast }
+      condition: "IN1 is_on OR VIN1 is_on"
+      off_delay_s: 30
+      force_off: "M0.VS2 > 15 for 3000"
 
-  # If the ARB twin is mounted in the cargo area instead of under the hood,
-  # drive its relay from here; the rocker stays on the front module:
-  # AUX2:
-  #   name: arb_compressor_relay
-  #   rating_a: 2
-  #   retries: 1
-  #   rule:
-  #     behaviour: follow
-  #     condition: "M0.IN1 is_on AND ENGINE_RUNNING is_on"
-  #     force_off: "M0.IN1 is_off OR ENGINE_RUNNING is_off OR VBAT_EST < hysteresis(12.0, 12.8) for 10000"
-  #     max_load_on_s: 1200
-  #     load_on_threshold_a: 0.08
-
-  AUX2: { name: spare, rating_a: 5 }
-  AUX3: { name: spare, rating_a: 5 }
-  AUX4: { name: spare, rating_a: 5 }
-
-# Keep-alive for the rear lamps, only if the RIGID tail lights turn out to need
-# it (bench test KA-1, open question Q-19):
+# Keep-alive for the Chase, only if bench test KA-1 shows its controller boots
+# slowly enough to delay the brake function:
 # keep_alive:
 #   KA1:
-#     name: rear_turn_keep_alive
+#     name: chase_keep_alive
 #     level_v: 6.0
-#     current_limit_a: 0.5
-#     expect_a: [0.005, 0.30]
-#     dip_check_while: "IN3 is_on OR IN4 is_on"
+#     current_limit_a: 0.3
+#     expect_a: [0.002, 0.10]
 #     rule:
 #       behaviour: follow
-#       condition: "IGN is_on OR IN3 is_on OR IN4 is_on"
-#       off_delay_s: 600
+#       condition: "IGN is_on"

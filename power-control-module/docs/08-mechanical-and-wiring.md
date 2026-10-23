@@ -223,25 +223,23 @@ chassis ground point.
 | Front | Front rock lights (OUT4, S) | 3 | 16 | 2.5 | 0.20 | 1.5 |
 | Front | ARB relay coil (AUX1) | 0.2 | 18 | 3.0 | 0.01 | 0.1 |
 | Front | Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
-| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 4.0 | 0.33 | 2.4 |
-| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 4.0 | 0.17 | 1.3 |
-| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 4.0 | 0.21 | 1.5 |
+| Rear | Battery feed to the rear module, 10 AWG, at the 30 A fuse | 30 | 10 | 4.0 | 0.39 | 2.9 |
+| Rear | Same 10 AWG feed at the expected 18 A | 18 | 10 | 4.0 | 0.24 | 1.7 |
 | Rear | Rear floods (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
 | Rear | Rear rock lights (OUT2, S) | 4 | 16 | 2.0 | 0.21 | 1.6 |
-| Rear | Fridge (OUT3, S) | 5 | 12 | 1.5 | 0.08 | 0.6 |
 | Rear | Camp lights (OUT4, S) | 4 | 16 | 3.0 | 0.32 | 2.3 |
-| Rear | Chase light (AUX1) | 1.5 | 18 | 1.5 | 0.09 | 0.7 |
+| Rear | RIGID Chase, all functions (AUX1-4) | 1.5 | 18 | 2.5 | 0.16 | 1.2 |
 
 On the rear module the same connector set is fitted but partly used: J6
 carries only CAN1 in/out and ground (no vehicle buses, no panel power), the
-`IGN` in J5 comes through the front–rear trunk cable, and J7 drives the chase
-light.
+`IGN` in J5 comes through the front–rear trunk cable, and J7 drives the
+RIGID Chase's function wires.
 
 Rules:
 
-- **Fuse each battery feed at the battery**: 80 A (front module) and 50 A
-  (rear module) MIDI/MEGA fuses or manual-reset breakers within ~300 mm of
-  the post. Not an auto-reset
+- **Fuse each battery feed at the battery**: 80 A (front module) and 30 A
+  (rear module) MIDI/MEGA or ATO/ATC-class fuses, or manual-reset breakers,
+  within ~300 mm of the post. Not an auto-reset
   (type I) breaker — it would cycle a fault through the firewall. The module
   protects its outputs; only those fuses protect the feeds.
 - Size output wire for the channel's **hardware** trip, not its firmware

@@ -143,8 +143,10 @@ flash-dip check below.
 | Option | Effort | Notes |
 |---|---|---|
 | Keep using the J-Link app | None | Works today; no automation |
+| **Run J-Link on the NVGOTEV head unit** | A quick test | Only if the head unit's Android exposes Bluetooth LE to apps — many Android head units route Bluetooth through a separate module used only for phone calls and audio. Test: install nRF Connect on the head unit and scan for the headlights; if they appear, install J-Link there. Control then lives on the dash screen with no custom hardware. |
 | **BLE bridge in the switch panel** | Investigation + firmware | The panel already sits in the cab on CAN1; give it a BLE-capable MCU (ESP32-S3 class: BLE + a TWAI CAN controller; or nRF52840 + an MCP2518FD). Panel buttons and module rules could then select lamp modes. |
 | BLE in the module | Not recommended | Keeps a radio stack and its updates out of the module that switches the loads |
+| Module status on the head unit | Later | An ESP32-S3-class panel MCU could also serve a small Wi-Fi status page that the head unit (or a phone) opens in a browser — no app, and no dependence on the head unit's Bluetooth |
 
 ### Investigation plan
 

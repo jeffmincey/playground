@@ -28,11 +28,14 @@
 | D-22 | **Two-module JK system:** front module (address 0, `MMSS`) in the glovebox, rear module (address 1, `SSSS`) in the cargo area | Loads switched near where they are; trailer signals local to the rear; the front module keeps the vehicle taps. See [13](13-multi-module-system.md). | Proposed |
 | D-23 | Modules are peers sharing broadcast values (`M<address>.<signal>`); no master | No single point of failure; nothing new on the bus | Proposed |
 | D-24 | Parked-mode telemetry (10 s `Status` with outputs on, silent otherwise, bursts on change) | One module's overnight load must not hold the others awake | Proposed |
-| D-25 | Rear module on its own fused feed (8 AWG, 50 A) unless a rear auxiliary battery is fitted | Avoids feeding one module through another; `VBAT_EST` corrects for the feed drop | Proposed — Q-16 |
+| D-25 | Rear module on its own fused feed: **10 AWG, 30 A** (no rear battery, no fridge) | Rear loads ≤ ~18 A; avoids feeding one module through another; `VBAT_EST` corrects for the feed drop | Accepted (Q-16 answered) |
 | D-26 | On this JK, tap CAN-IHS with a T-harness at the aftermarket radio interface's vehicle-side plug; rear lamp signals at the tail-light connector | The interface already occupies the radio connector; no factory wire is cut; the rear module sits next to the tail lights | Proposed — Q-18, Q-19 |
 | D-27 | Lamp keep-alive is **injected** through diodes into the factory turn/position circuits; the factory flasher keeps driving 12 V | Turn signals and hazards stay with the vehicle's flasher; module failure leaves the lamps working (boot delay only). See [14](14-lamp-keep-alive-and-bluetooth.md). | Proposed — Q-21 |
 | D-28 | Keep-alive rail on the logic board: buck, DAC-trimmed 5–8 V, two current-limited outputs on J7 | Low current; no change to the slot interface | Proposed |
 | D-29 | Bluetooth lamp control lives in the switch panel (BLE + CAN MCU), only if the J-Link protocol can be replayed; never in the load-switching module | Keeps a radio stack out of the module; the app stays the fallback | Open — investigation steps in 14 |
+| D-30 | The RIGID Chase 90133 is driven by the rear module's AUX bank (power/running, brake, strobe, white reverse/area) and the spare S slot (courtesy) | Low-current trigger wires; the light arbitrates its own modes; rear lamp signals are local to the rear module | Proposed — Q-24 |
+| D-31 | Rear module mounted inside the Tuffy 282-01 cargo enclosure, base plate bolted to its wall | Secure, dry, out of the way; thermal margin holds (96 °C junction, 83 °C base at full rating) | Proposed |
+| D-32 | Bucks switch above the AM band (~2.1 MHz, spread spectrum where available) | The head unit's tuner and internal amplifier share the vehicle supply and ground | Proposed — EMC-1 |
 
 ## Open questions
 
@@ -54,11 +57,13 @@ Answers change the design; listed with the default assumed until answered.
 | Q-12 | Keep the ARB rocker as the compressor switch, or move it to the panel? | Keep it (IN1), with its indicator on AUX3 | IN1/AUX3 allocation |
 | Q-13 | Under-dash space and firewall route on this JK? | Passenger side, existing grommet | Enclosure shape, harness lengths |
 | Q-14 | Actual temperatures at the candidate mounting spots (glovebox, rear cargo area, engine bay), including a summer crawl and a heat soak after shutdown? | Cab 65 °C (+ closed-glovebox penalty), engine bay 85 °C / 105 °C hot spot | Location choice, M vs M+ on the light-bar slot, enclosure |
-| Q-15 | Where is the ARB twin mounted — under the hood or in the cargo area? | Under the hood → front module AUX1 | Which module drives the relay |
-| Q-16 | Rear auxiliary battery (with a DC-DC charger) planned? | No — rear module on its own feed from the starting battery | Rear feed, fridge shed thresholds |
+| Q-15 | ~~Where is the ARB twin mounted?~~ **Answered:** engine bay → front module AUX1 | — | — |
+| Q-16 | ~~Rear auxiliary battery or fridge?~~ **Answered:** neither → 10 AWG / 30 A rear feed, rear OUT3 freed | — | — |
 | Q-17 | ~~Two-door or four-door?~~ **Answered:** two-door, ~4 m rear feed | — | Rear feed gauge and drop |
-| Q-18 | Which radio and vehicle interface are fitted (make, model; does it output reverse and VSS)? The shared conversation link could not be opened from the design environment. | A PAC RP4-CH11-class interface on the radio connector | CAN-IHS T-tap location, wired fallbacks for reverse and speed |
-| Q-19 | Which RIGID tail light (part number) — does it include the reverse lamp? Is a trailer harness fitted? | Reverse section present, no trailer harness | Rear module reverse and stop/turn taps |
+| Q-18 | ~~Which radio?~~ **Answered:** NVGOTEV Android head unit on the stock four speakers, internal amplifier, no external amp or subwoofer. Still to check: is there a CAN decoder box in its harness (where the CAN-IHS T-tap goes), and does the unit's Android expose Bluetooth LE to apps? | Decoder box on the radio connector; no analog reverse/VSS outputs | T-tap location; J-Link on the head unit |
+| Q-19 | ~~Which RIGID tail light?~~ **Answered:** RIGID 90133 is the Chase rear-facing pod, not a tail light; the tail lights stay factory | — | — |
+| Q-23 | Which rear loads besides the Chase will be fitted (rear floods, rear rock lights, camp lights)? | Placeholders kept | `SSSS` versus an AUX-only rear build |
+| Q-24 | RIGID Chase 90133 wire map from RIGID's instruction sheet (owners report red power/running, black ground, white brake, three more triggers) | As in `config/jk-rear.yaml` | AUX allocation on the rear module |
 | Q-20 | Which J.W. Speaker headlight model? Bluetooth brightness control points to the EVO J3 (built-in turn signal). If so, do the 239 J2 grille lamps stay active too (J.W. Speaker says J3 turn signals plus factory-position turn lamps exceed DOT intensity)? | EVO J3; 239 J2 position function only | Keep-alive injection points, DOT compliance |
 | Q-21 | Bench results for the lamp that needs keep-alive: which input powers its electronics, `V_alive`, `V_glow`, keep-alive current (warm and cold), boot time, Bluetooth reachable at keep-alive? | Turn input, 6 V, ≤ 0.1 A per lamp | Keep-alive level, current limit, injector design |
 | Q-22 | Which phone (iOS or Android) is available for the Bluetooth capture? | Android (HCI snoop log is simplest) | Investigation method |

@@ -65,6 +65,11 @@ def test_rear_module_has_margin_even_without_the_plate():
     assert t["ok"] and t["t_base_c"] < ASA_HDT_C
 
 
+def test_rear_module_inside_the_tuffy_on_the_plate_has_margin():
+    t = build_thermal("SSSS", "tuffy", "plate", "rated")
+    assert t["ok"] and t["t_base_c"] < ASA_HDT_C
+
+
 def test_base_plate_beats_printed_only():
     for location in ("cab", "engine_bay"):
         plate = build_thermal("MMSS", location, "plate")["tj_hottest_c"]

@@ -93,9 +93,11 @@ rented test house or approximated as noted.
 |---|---|---|---|
 | SY-1 | Front module, rear module and panel on one bus with the real trunk cable; unpowered CAN-H to CAN-L resistance | FN-11 | ~60 Ω; every frame of both modules decodes with `can/pcm-jk.dbc` |
 | SY-2 | Peer signals: rear rules using `M0.VS2` and `M0.OUT4`; then unplug the front module | FN-17 | Rear follows within 300 ms; with M0 gone the values go stale within 300 ms and the rules fall back as documented |
-| SY-3 | Parked: IGN off, fridge on the rear module overnight | FN-18 | Front module sleeps between wake-ups; its average current ≤ 0.3 mA |
+| SY-3 | Parked: IGN off, camp lights on the rear module for 4 h | FN-18 | Front module sleeps between wake-ups; its average current ≤ 0.3 mA |
 | SY-4 | State-change burst: front rock lights switched on with the rear module asleep | FN-18 | Rear rock lights follow within 1 s |
-| SY-5 | Rear feed under 40 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
+| SY-5 | Rear feed under 25 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
+| SY-7 | RIGID Chase on the rear AUX bank: each function alone and combined (running + brake, reverse + brake, strobe) | — | The light shows the expected mode for every combination in RIGID's sheet |
+| EMC-1 | AM and FM reception and speaker noise on the head unit with every PWM output running, the keep-alive rail on and the engine idling | — | No new audible whine or reception loss compared with the modules unpowered |
 | SY-6 | Ground offset between front and rear modules with all rear loads on | EL-9 | CAN common-mode within the transceiver's range; no error frames |
 
 ## Lamp keep-alive and Bluetooth

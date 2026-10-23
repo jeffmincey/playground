@@ -11,9 +11,12 @@ cannot provide.
 | AUX1 | ARB twin compressor relay (through ARB's pressure switch) | Relay coil, ~0.2 A (measure) |
 | AUX2 | Winch isolator contactor coil | 3.8 A pull-in for 130 ms, 0.13 A hold (economised coil) |
 | AUX3 | Indicator in the ARB rocker (compressor running / blocked) | LED, < 50 mA |
-| AUX4 | Spare (horn relay, fridge relay, second indicator) | ≤ 5 A |
+| AUX4 | Spare (horn relay, second indicator) | ≤ 5 A |
 
 ## ARB twin compressor (CKMTA12)
+
+Mounted in the engine bay on this JK, so the front module's AUX1 drives its
+relay and the ARB loom stays near the battery.
 
 ### What the ARB kit includes
 

@@ -32,7 +32,7 @@ flowchart LR
 | Reverse protection | LM74700-Q1 ideal-diode controller + small N-FET | ~20 mV drop instead of a Schottky's 0.4 V, which matters at 6 V cranking or under winch load; blocks the bulk capacitor from back-feeding the battery line during dips, which gives hold-up. |
 | Input clamp | Module-level TVS on the power board (SM8S24A-class, 24 V stand-off) | 24 V stand-off passes a 24 V jump start (EL-4) and clamps suppressed load dump. Everything on VBAT is rated ≥ 40 V. |
 | Hold-up | ~470 µF aluminium-polymer after the ideal diode | Rides through ~28 ms of 0 V at 100 mA input current (`C·ΔV/I` = 470 µF × 6 V / 0.1 A, 11 → 5 V). Fit 1000 µF if testing shows resets on short interruptions. |
-| Buck | 60 V synchronous buck, ≤ 30 µA no-load Iq, AEC-Q100 (TI LMR3600x-Q1 class) | 60 V input covers unsuppressed transients behind the TVS; a linear regulator from 14 V would burn ~1 W in a sealed box. |
+| Buck | 60 V synchronous buck, ≤ 30 µA no-load Iq, AEC-Q100 (TI LMR3600x-Q1 class), switching at ~2.1 MHz with spread spectrum where the part offers it | 60 V input covers unsuppressed transients behind the TVS; a linear regulator from 14 V would burn ~1 W in a sealed box. Switching above the AM broadcast band (≈ 0.53–1.7 MHz) keeps harmonics out of the head unit's AM tuner; the keep-alive buck follows the same rule. |
 | 3.3 V | Low-Iq LDO from 5 V | Clean ADC reference supply; MCU plus logic < 80 mA. |
 | ADC reference | 3.0 V precision reference on `VREF+` | Current-sense accuracy should not track the 3.3 V rail. |
 | Vehicle PHY supply | Small load switch on 5 V | Vehicle-bus transceivers are unpowered in sleep (they only need to run with IGN on). |

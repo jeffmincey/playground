@@ -143,8 +143,9 @@ SCENARIOS = {
     "jk_expected": [20, 12, 8, 4],
     # Two-module JK, front: light bar, bumper pods, ditch lights, front rock lights.
     "jk_front_expected": [20, 12, 6, 3],
-    # Two-module JK, rear: rear floods, rear rock lights, fridge, camp lights.
-    "jk_rear_expected": [8, 4, 5, 4],
+    # Two-module JK, rear: rear floods, rear rock lights, spare, camp lights
+    # (no fridge on this JK; the RIGID Chase runs from the AUX bank).
+    "jk_rear_expected": [8, 4, 0, 4],
 }
 
 # Steady AUX loads in the JK build (A): ARB relay coil, winch contactor hold
@@ -180,6 +181,7 @@ LOCATIONS = {
     "cab": Location("Cab, open air (under dash, or plate on dash metal)", 65.0),
     "glovebox": Location("Inside a closed glovebox", 65.0, 4.0),
     "rear_cargo": Location("Rear cargo area", 65.0),
+    "tuffy": Location("Inside the Tuffy cargo enclosure (closed steel box)", 65.0, 2.0),
     "engine_bay": Location("Engine bay", 85.0),
     "engine_bay_hot": Location("Engine-bay hot spot", 105.0),
 }
@@ -262,14 +264,12 @@ EXAMPLE_LOADS = [
     ("Front", "Front rock lights (OUT4, S)", 3, 16, 2.5, True),
     ("Front", "ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
     ("Front", "Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
-    ("Rear", "Battery feed to the rear module, 8 AWG, at rating", 40, 8, 4.0, False),
-    ("Rear", "Same 8 AWG feed at the expected 21 A", 21, 8, 4.0, False),
-    ("Rear", "Battery feed to the rear module, 6 AWG, at rating", 40, 6, 4.0, False),
+    ("Rear", "Battery feed to the rear module, 10 AWG, at the 30 A fuse", 30, 10, 4.0, False),
+    ("Rear", "Same 10 AWG feed at the expected 18 A", 18, 10, 4.0, False),
     ("Rear", "Rear floods (OUT1, S)", 8, 14, 1.5, True),
     ("Rear", "Rear rock lights (OUT2, S)", 4, 16, 2.0, True),
-    ("Rear", "Fridge (OUT3, S)", 5, 12, 1.5, True),
     ("Rear", "Camp lights (OUT4, S)", 4, 16, 3.0, True),
-    ("Rear", "Chase light (AUX1)", 1.5, 18, 1.5, True),
+    ("Rear", "RIGID Chase, all functions (AUX1-4)", 1.5, 18, 2.5, True),
 ]
 
 # Two-module JK system cases: (case, build, location, scenario)
@@ -277,8 +277,8 @@ SYSTEM_CASES = [
     ("Front, closed glovebox", "MMSS", "glovebox", "rated"),
     ("Front, closed glovebox", "MMSS", "glovebox", "jk_front_expected"),
     ("Front, vented glovebox or plate on dash metal", "MMSS", "cab", "jk_front_expected"),
-    ("Rear, cargo area", "SSSS", "rear_cargo", "rated"),
-    ("Rear, cargo area", "SSSS", "rear_cargo", "jk_rear_expected"),
+    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "rated"),
+    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "jk_rear_expected"),
 ]
 
 

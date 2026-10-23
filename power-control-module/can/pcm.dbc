@@ -1,0 +1,172 @@
+VERSION "pcm-protocol-0.1"
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	BA_DEF_DEF_
+	VAL_TABLE_
+
+BS_:
+
+BU_: HOST PCM0
+
+VAL_TABLE_ OutRequest 3 "RESERVED" 2 "ON" 1 "OFF" 0 "RELEASE" ;
+VAL_TABLE_ OutState 3 "FAULT" 2 "PWM" 1 "ON" 0 "OFF" ;
+VAL_TABLE_ OutSource 3 "OVERRIDE" 2 "CAN" 1 "RULE" 0 "DEFAULT" ;
+VAL_TABLE_ SlotClass 3 "L" 2 "M" 1 "S" 0 "EMPTY" ;
+VAL_TABLE_ FaultCode 10 "RETRY_WAIT" 9 "SLOT_MISMATCH" 8 "UNDERVOLTAGE" 7 "LOAD_SHED" 6 "LATCHED" 5 "EXT_VOLTAGE" 4 "OPEN_LOAD" 3 "OVERTEMP" 2 "SHORT" 1 "OVERCURRENT" 0 "NONE" ;
+VAL_TABLE_ ConfigOp 5 "FACTORY_RESET" 4 "REVERT" 3 "COMMIT" 2 "WRITE" 1 "READ" 0 "NOP" ;
+VAL_TABLE_ ConfigStatus 5 "LOCKED" 4 "BUSY" 3 "READ_ONLY" 2 "OUT_OF_RANGE" 1 "UNKNOWN_PARAM" 0 "OK" ;
+
+
+BO_ 1696 PCM0_Command: 8 HOST
+ SG_ OUT1_Req : 0|2@1+ (1,0) [0|3] "" PCM0
+ SG_ OUT2_Req : 2|2@1+ (1,0) [0|3] "" PCM0
+ SG_ OUT3_Req : 4|2@1+ (1,0) [0|3] "" PCM0
+ SG_ OUT4_Req : 6|2@1+ (1,0) [0|3] "" PCM0
+ SG_ OUT1_FaultReset : 8|1@1+ (1,0) [0|1] "" PCM0
+ SG_ OUT2_FaultReset : 9|1@1+ (1,0) [0|1] "" PCM0
+ SG_ OUT3_FaultReset : 10|1@1+ (1,0) [0|1] "" PCM0
+ SG_ OUT4_FaultReset : 11|1@1+ (1,0) [0|1] "" PCM0
+ SG_ Cmd_AliveCounter : 12|4@1+ (1,0) [0|15] "" PCM0
+ SG_ OUT1_Duty : 16|8@1+ (0.5,0) [0|127.5] "%" PCM0
+ SG_ OUT2_Duty : 24|8@1+ (0.5,0) [0|127.5] "%" PCM0
+ SG_ OUT3_Duty : 32|8@1+ (0.5,0) [0|127.5] "%" PCM0
+ SG_ OUT4_Duty : 40|8@1+ (0.5,0) [0|127.5] "%" PCM0
+ SG_ VIN1 : 48|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN2 : 49|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN3 : 50|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN4 : 51|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN5 : 52|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN6 : 53|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN7 : 54|1@1+ (1,0) [0|1] "" PCM0
+ SG_ VIN8 : 55|1@1+ (1,0) [0|1] "" PCM0
+
+BO_ 1697 PCM0_Status: 8 PCM0
+ SG_ OUT1_State : 0|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT2_State : 2|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT3_State : 4|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT4_State : 6|2@1+ (1,0) [0|3] "" HOST
+ SG_ IN1_Active : 8|1@1+ (1,0) [0|1] "" HOST
+ SG_ IN2_Active : 9|1@1+ (1,0) [0|1] "" HOST
+ SG_ IN3_Active : 10|1@1+ (1,0) [0|1] "" HOST
+ SG_ IN4_Active : 11|1@1+ (1,0) [0|1] "" HOST
+ SG_ IGN_Active : 12|1@1+ (1,0) [0|1] "" HOST
+ SG_ SleepPending : 13|1@1+ (1,0) [0|1] "" HOST
+ SG_ HostPresent : 14|1@1+ (1,0) [0|1] "" HOST
+ SG_ ConfigDirty : 15|1@1+ (1,0) [0|1] "" HOST
+ SG_ VBAT : 16|8@1+ (0.1,0) [0|25.5] "V" HOST
+ SG_ BoardTemp : 24|8@1+ (1,-40) [-40|215] "degC" HOST
+ SG_ OUT1_Source : 32|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT2_Source : 34|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT3_Source : 36|2@1+ (1,0) [0|3] "" HOST
+ SG_ OUT4_Source : 38|2@1+ (1,0) [0|3] "" HOST
+ SG_ LoadShedActive : 40|1@1+ (1,0) [0|1] "" HOST
+ SG_ ModuleBudgetLimit : 41|1@1+ (1,0) [0|1] "" HOST
+ SG_ ThermalDerating : 42|1@1+ (1,0) [0|1] "" HOST
+ SG_ VehicleBusActive : 43|1@1+ (1,0) [0|1] "" HOST
+ SG_ VehicleSignalStale : 44|1@1+ (1,0) [0|1] "" HOST
+ SG_ ModuleCurrent : 48|8@1+ (0.5,0) [0|127.5] "A" HOST
+ SG_ Sts_AliveCounter : 56|4@1+ (1,0) [0|15] "" HOST
+
+BO_ 1698 PCM0_Currents: 8 PCM0
+ SG_ OUT1_Current : 0|16@1+ (0.01,0) [0|655.35] "A" HOST
+ SG_ OUT2_Current : 16|16@1+ (0.01,0) [0|655.35] "A" HOST
+ SG_ OUT3_Current : 32|16@1+ (0.01,0) [0|655.35] "A" HOST
+ SG_ OUT4_Current : 48|16@1+ (0.01,0) [0|655.35] "A" HOST
+
+BO_ 1699 PCM0_Diag: 8 PCM0
+ SG_ OUT1_Fault : 0|8@1+ (1,0) [0|255] "" HOST
+ SG_ OUT2_Fault : 8|8@1+ (1,0) [0|255] "" HOST
+ SG_ OUT3_Fault : 16|8@1+ (1,0) [0|255] "" HOST
+ SG_ OUT4_Fault : 24|8@1+ (1,0) [0|255] "" HOST
+ SG_ OUT1_Temp : 32|8@1+ (1,-40) [-40|215] "degC" HOST
+ SG_ OUT2_Temp : 40|8@1+ (1,-40) [-40|215] "degC" HOST
+ SG_ OUT3_Temp : 48|8@1+ (1,-40) [-40|215] "degC" HOST
+ SG_ OUT4_Temp : 56|8@1+ (1,-40) [-40|215] "degC" HOST
+
+BO_ 1700 PCM0_Inputs: 8 PCM0
+ SG_ IN1_Voltage : 0|16@1+ (0.001,0) [0|65.535] "V" HOST
+ SG_ IN2_Voltage : 16|16@1+ (0.001,0) [0|65.535] "V" HOST
+ SG_ IN3_Voltage : 32|16@1+ (0.001,0) [0|65.535] "V" HOST
+ SG_ IN4_Voltage : 48|16@1+ (0.001,0) [0|65.535] "V" HOST
+
+BO_ 1701 PCM0_Info: 8 PCM0
+ SG_ SLOT1_Class : 0|2@1+ (1,0) [0|3] "" HOST
+ SG_ SLOT2_Class : 2|2@1+ (1,0) [0|3] "" HOST
+ SG_ SLOT3_Class : 4|2@1+ (1,0) [0|3] "" HOST
+ SG_ SLOT4_Class : 6|2@1+ (1,0) [0|3] "" HOST
+ SG_ ModuleAddress : 8|2@1+ (1,0) [0|3] "" HOST
+ SG_ ProtocolVersion : 10|6@1+ (1,0) [0|63] "" HOST
+ SG_ FwMajor : 16|8@1+ (1,0) [0|255] "" HOST
+ SG_ FwMinor : 24|8@1+ (1,0) [0|255] "" HOST
+ SG_ FwPatch : 32|8@1+ (1,0) [0|255] "" HOST
+ SG_ HwRevision : 40|8@1+ (1,0) [0|255] "" HOST
+ SG_ ConfigCrc16 : 48|16@1+ (1,0) [0|65535] "" HOST
+
+BO_ 1702 PCM0_ConfigReq: 8 HOST
+ SG_ CfgReq_Op : 0|8@1+ (1,0) [0|255] "" PCM0
+ SG_ CfgReq_Param : 8|16@1+ (1,0) [0|65535] "" PCM0
+ SG_ CfgReq_Value : 24|32@1- (1,0) [-2147483648|2147483647] "" PCM0
+ SG_ CfgReq_Seq : 56|8@1+ (1,0) [0|255] "" PCM0
+
+BO_ 1703 PCM0_ConfigResp: 8 PCM0
+ SG_ CfgResp_Status : 0|8@1+ (1,0) [0|255] "" HOST
+ SG_ CfgResp_Param : 8|16@1+ (1,0) [0|65535] "" HOST
+ SG_ CfgResp_Value : 24|32@1- (1,0) [-2147483648|2147483647] "" HOST
+ SG_ CfgResp_Seq : 56|8@1+ (1,0) [0|255] "" HOST
+
+
+CM_ "Power control module, module address 0, default base ID 0x6A0. Module n uses base + 0x10*n; regenerate this file for other addresses or a different base.";
+CM_ BO_ 1696 "Host to module. Send every 100 ms while controlling outputs; 500 ms without a frame whose alive counter changed is a host timeout.";
+CM_ SG_ 1696 OUT1_Req "RELEASE hands the output back to the rule engine.";
+CM_ SG_ 1696 OUT1_Duty "PWM duty when Req is ON. 200 = 100 %. 255 = use the configured default.";
+CM_ SG_ 1696 OUT1_FaultReset "Rising edge clears a latched fault on OUT1.";
+CM_ SG_ 1696 Cmd_AliveCounter "Increment by 1 every frame, wrapping at 15.";
+CM_ SG_ 1696 VIN1 "Virtual input for the rule engine, e.g. a CAN keypad button mapped by the host.";
+CM_ BO_ 1697 "Module to host. 100 ms, and on any state change (at most every 10 ms).";
+CM_ SG_ 1697 ConfigDirty "RAM configuration differs from flash; send ConfigReq COMMIT to persist.";
+CM_ SG_ 1697 ModuleCurrent "Sum of all output currents.";
+CM_ BO_ 1698 "Module to host, 100 ms.";
+CM_ BO_ 1699 "Module to host, 1 s and on change. Temp 255 (raw) = not measured for this cell.";
+CM_ SG_ 1699 OUT1_Fault "FaultCode value table.";
+CM_ BO_ 1700 "Module to host, 100 ms. Voltage at each input pin.";
+CM_ BO_ 1701 "Module to host, 1 s.";
+CM_ BO_ 1702 "Host to module configuration access. One request in flight; match responses by Seq.";
+CM_ BO_ 1703 "Module to host, reply to ConfigReq.";
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 10000;
+BA_DEF_DEF_ "GenMsgCycleTime" 0;
+BA_ "GenMsgCycleTime" BO_ 1696 100;
+BA_ "GenMsgCycleTime" BO_ 1697 100;
+BA_ "GenMsgCycleTime" BO_ 1698 100;
+BA_ "GenMsgCycleTime" BO_ 1699 1000;
+BA_ "GenMsgCycleTime" BO_ 1700 100;
+BA_ "GenMsgCycleTime" BO_ 1701 1000;
+
+VAL_ 1696 OUT1_Req 3 "RESERVED" 2 "ON" 1 "OFF" 0 "RELEASE" ;
+VAL_ 1696 OUT2_Req 3 "RESERVED" 2 "ON" 1 "OFF" 0 "RELEASE" ;
+VAL_ 1696 OUT3_Req 3 "RESERVED" 2 "ON" 1 "OFF" 0 "RELEASE" ;
+VAL_ 1696 OUT4_Req 3 "RESERVED" 2 "ON" 1 "OFF" 0 "RELEASE" ;
+VAL_ 1697 OUT1_State 3 "FAULT" 2 "PWM" 1 "ON" 0 "OFF" ;
+VAL_ 1697 OUT2_State 3 "FAULT" 2 "PWM" 1 "ON" 0 "OFF" ;
+VAL_ 1697 OUT3_State 3 "FAULT" 2 "PWM" 1 "ON" 0 "OFF" ;
+VAL_ 1697 OUT4_State 3 "FAULT" 2 "PWM" 1 "ON" 0 "OFF" ;
+VAL_ 1697 OUT1_Source 3 "OVERRIDE" 2 "CAN" 1 "RULE" 0 "DEFAULT" ;
+VAL_ 1697 OUT2_Source 3 "OVERRIDE" 2 "CAN" 1 "RULE" 0 "DEFAULT" ;
+VAL_ 1697 OUT3_Source 3 "OVERRIDE" 2 "CAN" 1 "RULE" 0 "DEFAULT" ;
+VAL_ 1697 OUT4_Source 3 "OVERRIDE" 2 "CAN" 1 "RULE" 0 "DEFAULT" ;
+VAL_ 1699 OUT1_Fault 10 "RETRY_WAIT" 9 "SLOT_MISMATCH" 8 "UNDERVOLTAGE" 7 "LOAD_SHED" 6 "LATCHED" 5 "EXT_VOLTAGE" 4 "OPEN_LOAD" 3 "OVERTEMP" 2 "SHORT" 1 "OVERCURRENT" 0 "NONE" ;
+VAL_ 1699 OUT2_Fault 10 "RETRY_WAIT" 9 "SLOT_MISMATCH" 8 "UNDERVOLTAGE" 7 "LOAD_SHED" 6 "LATCHED" 5 "EXT_VOLTAGE" 4 "OPEN_LOAD" 3 "OVERTEMP" 2 "SHORT" 1 "OVERCURRENT" 0 "NONE" ;
+VAL_ 1699 OUT3_Fault 10 "RETRY_WAIT" 9 "SLOT_MISMATCH" 8 "UNDERVOLTAGE" 7 "LOAD_SHED" 6 "LATCHED" 5 "EXT_VOLTAGE" 4 "OPEN_LOAD" 3 "OVERTEMP" 2 "SHORT" 1 "OVERCURRENT" 0 "NONE" ;
+VAL_ 1699 OUT4_Fault 10 "RETRY_WAIT" 9 "SLOT_MISMATCH" 8 "UNDERVOLTAGE" 7 "LOAD_SHED" 6 "LATCHED" 5 "EXT_VOLTAGE" 4 "OPEN_LOAD" 3 "OVERTEMP" 2 "SHORT" 1 "OVERCURRENT" 0 "NONE" ;
+VAL_ 1701 SLOT1_Class 3 "L" 2 "M" 1 "S" 0 "EMPTY" ;
+VAL_ 1701 SLOT2_Class 3 "L" 2 "M" 1 "S" 0 "EMPTY" ;
+VAL_ 1701 SLOT3_Class 3 "L" 2 "M" 1 "S" 0 "EMPTY" ;
+VAL_ 1701 SLOT4_Class 3 "L" 2 "M" 1 "S" 0 "EMPTY" ;
+VAL_ 1702 CfgReq_Op 5 "FACTORY_RESET" 4 "REVERT" 3 "COMMIT" 2 "WRITE" 1 "READ" 0 "NOP" ;
+VAL_ 1703 CfgResp_Status 5 "LOCKED" 4 "BUSY" 3 "READ_ONLY" 2 "OUT_OF_RANGE" 1 "UNKNOWN_PARAM" 0 "OK" ;

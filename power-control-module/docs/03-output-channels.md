@@ -1,0 +1,178 @@
+# 03 — Output channels
+
+All outputs are high-side solid-state switches: the module switches battery
+positive to the load and the load returns to chassis. Three channel classes
+cover the JK use cases; each is a *cell* that implements the
+[slot interface](02-architecture.md#slot-interface).
+
+Part numbers are candidates. Figures marked † are typical datasheet values
+recalled for sizing and **must be checked against the current datasheet**
+before the BOM is frozen.
+
+## Class summary
+
+| | **S — small** | **M — medium** | **L — large** |
+|---|---|---|---|
+| Continuous rating | 10 A | 20 A (25 A ≤ 60 °C ambient) | 40 A |
+| Typical loads | Pods, rock lights, rear floods, relay/solenoid coils | Light bars, paired pods | Compressor, large bar, fridge + radio feed |
+| Switch | Infineon **BTS7004-1EPP** (PROFET+2 12 V, 4.4 mΩ†) | Infineon **BTS7002-1EPP** (PROFET+2 12 V, 2.6 mΩ†) | 4 × 60 V automotive N-MOSFET: 2 in parallel, back-to-back common-source |
+| Alternates | BTS7006-1EPP (6 mΩ†); TI TPS1HB08-Q1 | BTS50015-1TAD (1.5 mΩ†, TO-263-7) for a 25–30 A M+ cell | Infineon 2ED2410-EM dual-channel driver (natural fit for an `LL` variant) |
+| Driver | Integrated | Integrated | TI **TPS48111-Q1** smart high-side gate driver |
+| Current sense | PROFET `IS` current mirror → resistor → ADC | Same | 0.25 mΩ 4-terminal shunt → driver's sense amplifier → ADC |
+| Hardware trip | Internal current limit + thermal shutdown (~45 A† limit) | Same (~75 A† limit) | Driver short-circuit comparator 150 A, ~10 µs; overcurrent comparator 70 A with 0.5 s timer |
+| PWM | 100–250 Hz (dimming, soft-start) | 100–250 Hz (soft-start; dimming if load tolerates it) | Soft-start only; no continuous PWM |
+| Reverse battery | ReverseON (channel turns on to limit dissipation; load sees reverse voltage) | Same | Back-to-back FETs block; load sees nothing |
+| Temperature | Internal sensing; firmware estimate | Same | NTC beside the FETs |
+
+### Thermal check at 85 °C ambient
+
+From `python3 tools/budget.py` (assumed junction-to-ambient as mounted:
+S 25 K/W, M 20 K/W, L 30 K/W per FET; hot R<sub>DS(on)</sub> = 2× for PROFET,
+1.8× for discrete FETs at 1.2 mΩ each):
+
+| Class | I cont (A) | Path R hot (mΩ) | Drop (mV) | Switch loss (W) | Shunt loss (W) | T<sub>j</sub> est (°C) |
+|---|---:|---:|---:|---:|---:|---:|
+| S | 10 | 8.80 | 88 | 0.88 | 0.00 | 107 |
+| M | 20 | 5.20 | 104 | 2.08 | 0.00 | 127 |
+| L | 40 | 2.16 | 96 | 3.46 | 0.40 | 111 |
+
+The M cell is the thermal limit: 127 °C at 85 °C ambient leaves ~23 °C to the
+150 °C limit, which is why M is rated 20 A and firmware derates it above
+65 °C board temperature. The default `LMSS` build dissipates 7.7 W with every
+channel at its rating; the power board is bonded to the enclosure floor with
+a gap pad so the aluminium is the heat sink.
+
+Thermal resistances are the weakest assumption in this table. They are
+replaced with measured values in validation test TH-1.
+
+## S and M cells (PROFET+2)
+
+```
+VBAT ──┬───────────────┐
+       │           ┌───┴────┐
+      Cbulk        │  VS    │
+      (local)      │        │ OUT ──┬──[OUT_SENSE divider]── to logic
+                   │PROFET+2│       │
+CHn_EN  ──[R]──────┤ IN     │       ├── output pin
+CHn_DIAG ──[R]─────┤ DEN    │       │
+                   │     IS ├──┬────┴─(optional freewheel at load for big solenoids)
+                   │  GND   │  │
+                   └───┬────┘  R_IS ──┬── RC ── CHn_ISENSE
+                       │       │      └── comparator ── CHn_FAULT_N
+                     R_GND     GND
+                       │
+                      GND
+```
+
+- `IN` and `DEN` have pull-downs on the power board so the cell is off with
+  no logic board.
+- `R_IS` is chosen so 1.5 × rating ≈ 2.5 V at the ADC with the datasheet
+  k<sub>ILIS</sub> ratio. In a fault the PROFET drives `IS` to its fault
+  current, which saturates near the clamp; a comparator at ~2.9 V raises
+  `CHn_FAULT_N` so faults reach an interrupt pin, not only the ADC.
+- k<sub>ILIS</sub> spreads ±several % part to part and is non-linear at low
+  current, so each cell is two-point calibrated at end-of-line (≈ 10 % and
+  ≈ 80 % of rating) and the gain/offset stored in the power-board EEPROM.
+- `R_GND` (per datasheet) limits ground current in a reverse-battery or
+  ground-loss event.
+- Inductive loads: the PROFET's integrated output clamp absorbs relay-coil
+  energy. Solenoids above ~1 A (air lockers, contactor coils) get a
+  freewheel diode at the load.
+- Capacitive LED drivers: switch-on charges the driver's bulk capacitance
+  through the PROFET's current limit. Firmware soft-start (PWM ramp over
+  50–500 ms) keeps the peak below the limit and avoids nuisance trips.
+
+### PWM on light loads — practical note
+
+PWM dimming of a light's *supply* only works if the light's internal driver
+follows it. Many light bars have a constant-current driver with bulk
+capacitance and either flicker or ignore PWM. Configure those outputs for
+soft-start only; use dimming on simple LED strips, rock lights and pods that
+are known to dim.
+
+## L cell (discrete MOSFETs + smart driver)
+
+```
+VBAT ──┬──────────────[Rshunt 0.25 mΩ, Kelvin]──────┐
+       │                                             │
+      TVS                       ┌── Q1a ─┐           │
+   (module input)       drain ──┤        ├── source ─┼─ common source ─┬─ source ──┤ Q2a ├── drain ── OUT stud
+                                └── Q1b ─┘           │                 └─ source ──┤ Q2b ├──┘
+                                   gate ─────────────┴── TPS48111-Q1 GATE ──────── gate
+                                                         CS+/CS- (Kelvin from shunt)
+                                                         IMON → CHn_ISENSE
+                                                         FLT_N → CHn_FAULT_N
+                                                         EN/INP ← CHn_EN
+                                                         NTC → CHn_TEMP
+OUT ──┬── Schottky freewheel (cathode at OUT, anode at GND), 60 V, ≥ 40 A pulse
+      └── OUT_SENSE divider
+```
+
+- Q1a/Q1b (drains to VBAT) block forward current when off — the switching
+  function. Q2a/Q2b (drains to OUT) block reverse current — reverse battery,
+  or the output back-fed from another source. Together they form a
+  bidirectional switch; common source lets one gate drive control all four.
+- **MOSFET spec:** 60 V, AEC-Q101, R<sub>DS(on)</sub> ≤ 1.3 mΩ at 10 V
+  V<sub>GS</sub>, TOLL / sTOLL / LFPAK88 or equivalent bottom-cooled package.
+  60 V rather than 40 V buys margin above the 35 V suppressed load dump plus
+  inductive kick at turn-off. Linear-mode SOA is not required because the
+  FETs are never held in linear mode.
+- **Shunt:** 0.25 mΩ, 4-terminal metal element, ≥ 3 W, Kelvin-routed. 40 A
+  gives 10 mV and 0.4 W; 150 A gives 37.5 mV, inside the driver's
+  sense-amplifier range (verify for the selected suffix).
+- **Inrush (compressor):** the driver's overcurrent comparator has a timer
+  so motor inrush (up to the 150 A short-circuit level, ~100–300 ms) passes;
+  a sustained > 70 A for 0.5 s trips in hardware; the firmware I²t fuse is
+  the primary protection at configured ratings below that.
+- **Freewheel:** a motor or long-harness inductance at turn-off is clamped
+  by the Schottky to ~−0.6 V instead of avalanching the FETs.
+- **Twin-motor compressors** can exceed 150 A at start and 60 A running.
+  Drive those through their own relay/contactor from an S channel.
+
+## Protection layers
+
+| Layer | Mechanism | Response | Independent of firmware? |
+|---|---|---|---|
+| 1 | Short-circuit trip (PROFET internal limit / L driver comparator) | µs | Yes |
+| 2 | Overtemperature (PROFET internal / L driver timer + NTC) | ms | Yes (S/M), partly (L) |
+| 3 | Electronic fuse: instantaneous + I²t, per-output configurable | 1 ms loop | No |
+| 4 | Inrush blanking and soft-start | per configuration | No |
+| 5 | Retry with back-off, then latch | s | No |
+| 6 | Load shed: low battery, module current budget, board temperature | s | No |
+| 7 | Upstream fuse on the battery feed (100 A at the battery) | — | Yes — protects the feed cable only |
+
+**Wire-sizing rule:** size each output wire for the *hardware* trip level
+(layers 1–2), not the firmware fuse setting, because hardware is the layer
+that still works with the MCU hung. In practice: S → 14 AWG, M → 10–12 AWG,
+L → 8 AWG for runs up to ~3 m. [Harness drop table](08-mechanical-and-wiring.md#harness).
+
+## "Current limiting" — what it means here
+
+True linear current limiting (holding a load at, say, 20 A by running the
+switch partly on) dissipates `(VBAT − Vload) × I` in the switch — over 100 W
+in a 40 A channel — and is not sustainable in a sealed box. This design
+therefore **limits by tripping and by duty cycle**, not by linear regulation:
+
+- fast hardware trip for shorts,
+- configurable I²t trip for overloads,
+- soft-start to cap inrush,
+- PWM duty foldback for loads that tolerate it (lights) when the channel,
+  board or battery is near a limit.
+
+The only linear limiting is the PROFET's built-in short-circuit limit, which
+lasts until its thermal shutdown — milliseconds — and is a protection
+behaviour, not a control mode.
+
+## Diagnostics per output
+
+| Condition | Detection | Reported as |
+|---|---|---|
+| Overcurrent / I²t trip | Firmware, from ISENSE | `FAULT_OVERCURRENT` |
+| Short circuit | `CHn_FAULT_N` or ISENSE saturated | `FAULT_SHORT` |
+| Overtemperature | PROFET fault with normal current; L NTC | `FAULT_OVERTEMP` |
+| Open load (on) | Current below configured minimum while on | `WARN_OPEN_LOAD` |
+| Open load (off) | `OUT_SENSE` with off-state pull-up (DEN on PROFET cells) | `WARN_OPEN_LOAD` |
+| Output powered externally | `OUT_SENSE` high while commanded off | `WARN_EXT_VOLTAGE` |
+| Latched after retries | Retry counter exhausted | `FAULT_LATCHED` |
+
+Fault codes are listed in [06-can-protocol.md](06-can-protocol.md#fault-codes).

@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+# KiCad local state and backups
+*.kicad_prl
+*-backups/
+fp-info-cache

@@ -1,0 +1,95 @@
+# Example configuration: Jeep JK, power board variant LMSS, module address 0.
+#
+# This file is the human-editable source. A host-side tool (planned, see
+# ../firmware/README.md) validates it and compiles it to the parameter writes
+# described in ../docs/06-can-protocol.md, or uploads it whole over USB.
+# Units: A, V, ms, s, %.
+
+module:
+  address: 0
+  variant: LMSS            # must match the fitted slot classes or the
+                           # mismatched output stays off (SLOT_MISMATCH)
+  can:
+    bitrate: 500000
+    base_id: 0x6A0
+    termination: true      # this module is one physical end of the bus
+    host_timeout_ms: 500
+  current_budget_a: 80
+  sleep_after_s: 30
+
+inputs:
+  IN1: { name: bar_toggle,   mode: ACTIVE_LOW,  debounce_on_ms: 20, debounce_off_ms: 50 }
+  IN2: { name: trailer_reverse, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
+         debounce_on_ms: 50, debounce_off_ms: 300 }   # longer: rejects
+                                                       # trailer-detect pulses
+  IN3: { name: air_toggle,   mode: ACTIVE_LOW }
+  IN4: { name: tank_pressure, mode: ANALOG,
+         # 0.5-4.5 V ratiometric transducer, 0-200 psi, on +5V_SENS
+         scale: { v_min: 0.5, v_max: 4.5, min: 0, max: 200, unit: psi } }
+
+vehicle_signals:           # empty until the JK CAN-C bus has been sniffed
+  # VS1: { name: vehicle_speed, can_id: TBD, start_bit: TBD, length: 16,
+  #        byte_order: big, factor: 0.01, offset: 0, unit: km/h, timeout_ms: 500 }
+
+outputs:
+  OUT1:
+    name: compressor
+    class: L
+    rating_a: 40
+    i2t_tau_s: 10
+    inrush_ms: 300
+    retries: 1
+    on_host_loss: "OFF"   # quoted: bare OFF is a YAML boolean
+    shed_priority: 1       # 1 = shed first
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      # Run while the AIR toggle is on and the engine is running; hysteresis
+      # on tank pressure: cut in below 110 psi, cut out above 150 psi.
+      condition: "IN3 is_on AND ENGINE_RUNNING is_on AND IN4 < hysteresis(110, 150)"
+      max_on_s: 900        # 15 min duty-cycle guard for the compressor motor
+      min_off_s: 600       # then cool for 10 min
+
+  OUT2:
+    name: light_bar
+    class: M
+    rating_a: 20
+    soft_start_ms: 200     # tames the bar driver's capacitive inrush
+    pwm: false             # this bar's internal driver does not dim cleanly
+    on_host_loss: "HOLD"
+    hold_s: 10
+    shed_priority: 3
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      condition: "IN1 is_on AND IGN is_on"
+      override: [IN1]      # dash switch wins over a CAN keypad
+
+  OUT3:
+    name: rear_floods
+    class: S
+    rating_a: 10
+    on_host_loss: "RELEASE"
+    shed_priority: 2
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      # On while reversing and for 60 s after; or while keypad button VIN1
+      # is latched on (the keypad host does the latching).
+      condition: "IN2 is_on OR VIN1 is_on"
+      off_delay_s: 60
+
+  OUT4:
+    name: rock_lights
+    class: S
+    rating_a: 10
+    pwm: { frequency_hz: 200, default_duty: 60 }
+    soft_start_ms: 500
+    on_host_loss: "HOLD"
+    hold_s: 10
+    shed_priority: 4
+    shed_ign_off: true     # camp use is fine until the battery hits 12.0 V
+    rule:
+      behaviour: toggle
+      condition: "VIN2 is_on"   # each press flips the output
+      max_on_s: 1800       # courtesy timer: off after 30 min

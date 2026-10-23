@@ -68,6 +68,7 @@ To start a new project, copy the `skeleton/` folder (see its README).
 ├── pixi.lock         # resolved dependencies (commit this)
 ├── skeleton/         # copy me to start a new project
 ├── pandas-project/   # example project with its own environment
+├── power-control-module/  # vehicle power distribution module design (PCB, CAN, firmware)
 └── src/              # application code
 ```
 

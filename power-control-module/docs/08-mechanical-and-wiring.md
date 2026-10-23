@@ -158,14 +158,14 @@ series; pick the flange variant of each.
 On variants with an L slot, J3 carries that slot and J4 the remaining three
 S/M slots (pin 4 spare); the connector families do not change.
 
-### J4 — outputs (`MMSS`)
+### J4 — outputs
 
-| Pin | Signal | JK load |
-|---|---|---|
-| 1 | OUT1 (M) | Light bar |
-| 2 | OUT2 (M) | Front pods |
-| 3 | OUT3 (S) | Rear floods |
-| 4 | OUT4 (S) | Rock lights |
+| Pin | Signal | Front module (`MMSS`) | Rear module (`SSSS`) |
+|---|---|---|---|
+| 1 | OUT1 | Light bar (M) | Rear flood (S) |
+| 2 | OUT2 | Bumper pods (M) | Rear rock lights (S), if fitted |
+| 3 | OUT3 | Ditch lights (S) | RIGID Chase green, courtesy (S) |
+| 4 | OUT4 | Front rock lights (S) | Camp lights (S), if fitted |
 
 ### J5 — inputs
 
@@ -196,16 +196,16 @@ S/M slots (pin 4 spare); the connector families do not change.
 
 ### J7 — AUX and keep-alive outputs
 
-| Pin | Signal | JK load (front module) |
-|---|---|---|
-| 1 | AUX1 | ARB relay coil (via ARB pressure switch) |
-| 2 | AUX2 | Winch contactor coil (via diode D1) |
-| 3 | AUX3 | ARB rocker indicator |
-| 4 | AUX4 | Spare |
-| 5 | KA1 | Keep-alive to the front turn/position injectors ([14](14-lamp-keep-alive-and-bluetooth.md)) |
-| 6 | KA2 | Spare keep-alive (rear lamps if they need it) |
-| 7 | GND | Return for loads that need one at the module |
-| 8 | GND | |
+| Pin | Signal | Front module | Rear module |
+|---|---|---|---|
+| 1 | AUX1 | ARB relay coil (via ARB pressure switch) | RIGID Chase red, trail light |
+| 2 | AUX2 | Winch contactor coil (via diode D1) | RIGID Chase white, brake |
+| 3 | AUX3 | ARB rocker indicator | RIGID Chase yellow, strobe |
+| 4 | AUX4 | Spare | RIGID Chase blue, reverse |
+| 5 | KA1 | Keep-alive to the front turn/position injectors ([14](14-lamp-keep-alive-and-bluetooth.md)) | Unused |
+| 6 | KA2 | Spare keep-alive | Unused |
+| 7 | GND | Return for loads that need one at the module | RIGID Chase black, ground |
+| 8 | GND | | |
 
 ## Harness
 
@@ -224,16 +224,19 @@ chassis ground point.
 | Front | ARB relay coil (AUX1) | 0.2 | 18 | 3.0 | 0.01 | 0.1 |
 | Front | Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
 | Rear | Battery feed to the rear module, 10 AWG, at the 30 A fuse | 30 | 10 | 4.0 | 0.39 | 2.9 |
-| Rear | Same 10 AWG feed at the expected 18 A | 18 | 10 | 4.0 | 0.24 | 1.7 |
-| Rear | Rear floods (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
+| Rear | Same 10 AWG feed at the expected 20 A | 20 | 10 | 4.0 | 0.26 | 1.9 |
+| Rear | Rear flood (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
 | Rear | Rear rock lights (OUT2, S) | 4 | 16 | 2.0 | 0.21 | 1.6 |
 | Rear | Camp lights (OUT4, S) | 4 | 16 | 3.0 | 0.32 | 2.3 |
-| Rear | RIGID Chase, all functions (AUX1-4) | 1.5 | 18 | 2.5 | 0.16 | 1.2 |
+| Rear | RIGID Chase, all five functions on (AUX1-4, OUT3) | 3.9 | 18 | 2.5 | 0.41 | 3.0 |
 
 On the rear module the same connector set is fitted but partly used: J6
 carries only CAN1 in/out and ground (no vehicle buses, no panel power), the
-`IGN` in J5 comes through the front–rear trunk cable, and J7 drives the
-RIGID Chase's function wires.
+`IGN` in J5 comes through the front–rear trunk cable, and J7 drives four of
+the RIGID Chase's five function wires and takes its ground; the green
+courtesy wire comes from OUT3 on J4. The Chase row assumes all five
+functions on and counts the full 3.9 A both ways, so it overstates the drop:
+only the shared ground carries the sum.
 
 Rules:
 

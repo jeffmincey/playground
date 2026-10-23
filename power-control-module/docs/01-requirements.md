@@ -46,6 +46,7 @@ jump-start only, see EL-4).
 | FN-18 | A parked module **shall not** keep its peers awake: silent with all outputs off, low-rate telemetry otherwise, state changes sent so that a sleeping peer still receives them. |
 | FN-19 | The module **shall** provide 2 keep-alive outputs: an adjustable 5–8 V rail, current-limited per output, to hold lamp electronics booted between flashes. |
 | FN-20 | Turn-signal and hazard lamps **shall** stay driven by the vehicle's own flasher; a module failure **shall** leave them working (keep-alive is injected, never in series). |
+| FN-21 | Any output **shall** accept an optional maximum supply voltage; above it the output switches off until the supply recovers, so loads rated for 12 V only (e.g. the RIGID Chase, 9–15 V) survive a 24 V jump start (EL-4) or a failed regulator. |
 
 ## Electrical environment (12 V vehicle)
 

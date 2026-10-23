@@ -143,7 +143,7 @@ flash-dip check below.
 | Option | Effort | Notes |
 |---|---|---|
 | Keep using the J-Link app | None | Works today; no automation |
-| **Run J-Link on the NVGOTEV head unit** | A quick test | Only if the head unit's Android exposes Bluetooth LE to apps — many Android head units route Bluetooth through a separate module used only for phone calls and audio. Test: install nRF Connect on the head unit and scan for the headlights; if they appear, install J-Link there. Control then lives on the dash screen with no custom hardware. |
+| Run J-Link on the NVGOTEV head unit | Tested — **set aside** | Needed the head unit's Android to expose Bluetooth LE to apps; many Android head units route Bluetooth through a separate module used only for phone calls and audio. nRF Connect on the head unit did not find the headlights. That result counts only if the headlights were on during the scan (the lamps need to be on for Bluetooth) and a phone saw them at the same moment — BT-1 repeats it that way once. |
 | **BLE bridge in the switch panel** | Investigation + firmware | The panel already sits in the cab on CAN1; give it a BLE-capable MCU (ESP32-S3 class: BLE + a TWAI CAN controller; or nRF52840 + an MCP2518FD). Panel buttons and module rules could then select lamp modes. |
 | BLE in the module | Not recommended | Keeps a radio stack and its updates out of the module that switches the loads |
 | Module status on the head unit | Later | An ESP32-S3-class panel MCU could also serve a small Wi-Fi status page that the head unit (or a phone) opens in a browser — no app, and no dependence on the head unit's Bluetooth |
@@ -154,7 +154,8 @@ flash-dip check below.
    features it offers.
 2. **Scan:** with nRF Connect (phone), list the lamp's advertising name,
    services and characteristics, with the headlights on and then at
-   keep-alive only.
+   keep-alive only. Repeat once from the head unit with the headlights on,
+   while the phone sees them, to settle the head-unit result.
 3. **Capture:** record the app's traffic while changing each setting —
    Android's Bluetooth HCI snoop log (developer options), or Apple's
    Bluetooth logging profile with PacketLogger on iOS — and open it in

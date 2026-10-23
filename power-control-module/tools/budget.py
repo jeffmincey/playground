@@ -9,6 +9,7 @@ Usage:
     python3 tools/budget.py                                  # JK default: MMSS, cab, printed + plate
     python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
     python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
+    python3 tools/budget.py --build SSSS --location tuffy --scenario jk_rear_expected --aux rear
 
 Standard library only. Device figures are typical datasheet values and are
 marked "verify" in the docs until the parts are locked in the BOM. Thermal
@@ -143,14 +144,18 @@ SCENARIOS = {
     "jk_expected": [20, 12, 8, 4],
     # Two-module JK, front: light bar, bumper pods, ditch lights, front rock lights.
     "jk_front_expected": [20, 12, 6, 3],
-    # Two-module JK, rear: rear floods, rear rock lights, spare, camp lights
-    # (no fridge on this JK; the RIGID Chase runs from the AUX bank).
-    "jk_rear_expected": [8, 4, 0, 4],
+    # Two-module JK, rear: rear flood, rear rock lights, RIGID Chase courtesy
+    # (green wire), camp lights. No fridge on this JK.
+    "jk_rear_expected": [8, 4, 0.3, 4],
 }
 
-# Steady AUX loads in the JK build (A): ARB relay coil, winch contactor hold
-# (economised coil), rocker indicator LED, spare.
-AUX_LOADS_A = [0.2, 0.13, 0.05, 0.0]
+# Steady AUX loads (A). Front: ARB relay coil, winch contactor hold
+# (economised coil), rocker indicator LED, spare. Rear: the RIGID Chase's
+# trail, brake, strobe and reverse wires, all on, at RIGID's 14 V figures.
+AUX_LOADS_A = {
+    "front": [0.2, 0.13, 0.05, 0.0],
+    "rear": [0.3, 1.3, 1.3, 0.7],
+}
 
 LOGIC_W = 0.5  # buck, LDO, MCU, transceivers, input pull-ups
 
@@ -187,7 +192,8 @@ LOCATIONS = {
 }
 
 
-def build_thermal(build: str, location: str, enclosure: str, scenario: str = "rated") -> dict:
+def build_thermal(build: str, location: str, enclosure: str, scenario: str = "rated",
+                  aux: str = "front") -> dict:
     """Module-level heat: Tj = ambient + P_total * Rth_enc + P_switch * Rth_j_base."""
     cells = [CLASSES[k] for k in BUILDS[build]]
     currents = SCENARIOS[scenario] or [c.i_cont_a for c in cells]
@@ -195,8 +201,8 @@ def build_thermal(build: str, location: str, enclosure: str, scenario: str = "ra
         if i > c.i_cont_a:
             raise ValueError(f"{i} A exceeds the {c.name} rating in {build}")
     losses = [channel_loss(c, i) for c, i in zip(cells, currents)]
-    aux = CLASSES["A"]
-    aux_losses = [channel_loss(aux, i) for i in AUX_LOADS_A]
+    aux_cls = CLASSES["A"]
+    aux_losses = [channel_loss(aux_cls, i) for i in AUX_LOADS_A[aux]]
     p_total = (sum(x["p_total_w"] for x in losses)
                + sum(x["p_total_w"] for x in aux_losses) + LOGIC_W)
     loc = LOCATIONS[location]
@@ -265,20 +271,22 @@ EXAMPLE_LOADS = [
     ("Front", "ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
     ("Front", "Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
     ("Rear", "Battery feed to the rear module, 10 AWG, at the 30 A fuse", 30, 10, 4.0, False),
-    ("Rear", "Same 10 AWG feed at the expected 18 A", 18, 10, 4.0, False),
-    ("Rear", "Rear floods (OUT1, S)", 8, 14, 1.5, True),
+    ("Rear", "Same 10 AWG feed at the expected 20 A", 20, 10, 4.0, False),
+    ("Rear", "Rear flood (OUT1, S)", 8, 14, 1.5, True),
     ("Rear", "Rear rock lights (OUT2, S)", 4, 16, 2.0, True),
     ("Rear", "Camp lights (OUT4, S)", 4, 16, 3.0, True),
-    ("Rear", "RIGID Chase, all functions (AUX1-4)", 1.5, 18, 2.5, True),
+    # All five Chase functions on: 0.3 + 1.3 + 1.3 + 0.7 + 0.3 A. Conservative:
+    # only the shared ground carries the sum; each feed carries its own function.
+    ("Rear", "RIGID Chase, all five functions on (AUX1-4, OUT3)", 3.9, 18, 2.5, True),
 ]
 
-# Two-module JK system cases: (case, build, location, scenario)
+# Two-module JK system cases: (case, build, location, scenario, AUX loads)
 SYSTEM_CASES = [
-    ("Front, closed glovebox", "MMSS", "glovebox", "rated"),
-    ("Front, closed glovebox", "MMSS", "glovebox", "jk_front_expected"),
-    ("Front, vented glovebox or plate on dash metal", "MMSS", "cab", "jk_front_expected"),
-    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "rated"),
-    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "jk_rear_expected"),
+    ("Front, closed glovebox", "MMSS", "glovebox", "rated", "front"),
+    ("Front, closed glovebox", "MMSS", "glovebox", "jk_front_expected", "front"),
+    ("Front, vented glovebox or plate on dash metal", "MMSS", "cab", "jk_front_expected", "front"),
+    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "rated", "rear"),
+    ("Rear, inside the Tuffy enclosure", "SSSS", "tuffy", "jk_rear_expected", "rear"),
 ]
 
 
@@ -306,9 +314,9 @@ SLEEP_ITEMS = [
 # --- Report ------------------------------------------------------------------
 
 
-def cell(build: str, location: str, enclosure: str, scenario: str) -> str:
+def cell(build: str, location: str, enclosure: str, scenario: str, aux: str = "front") -> str:
     """'Tj / base' with the value that breaks a limit in bold."""
-    t = build_thermal(build, location, enclosure, scenario)
+    t = build_thermal(build, location, enclosure, scenario, aux)
     tj = f"{t['tj_hottest_c']:.0f}"
     base = f"{t['t_base_c']:.0f}"
     return f"{tj if t['tj_ok'] else f'**{tj}**'} / {base if t['base_ok'] else f'**{base}**'}"
@@ -329,19 +337,19 @@ def matrix(scenario: str, builds: list[str],
 def system_table() -> list[str]:
     out = ["| Case | Build | Loads | " + " | ".join(e.name for e in ENCLOSURES.values()) + " |",
            "|---|---|---|" + "---:|" * len(ENCLOSURES)]
-    for case, build, loc, scenario in SYSTEM_CASES:
+    for case, build, loc, scenario, aux in SYSTEM_CASES:
         loads = "rated" if SCENARIOS[scenario] is None else str(SCENARIOS[scenario])
-        cells = [cell(build, loc, enc, scenario) for enc in ENCLOSURES]
+        cells = [cell(build, loc, enc, scenario, aux) for enc in ENCLOSURES]
         out.append(f"| {case} | {build} | {loads} | " + " | ".join(cells) + " |")
     return out
 
 
-def report(build: str, location: str, enclosure: str, scenario: str) -> str:
+def report(build: str, location: str, enclosure: str, scenario: str, aux: str = "front") -> str:
     out: list[str] = []
-    sel = build_thermal(build, location, enclosure, scenario)
+    sel = build_thermal(build, location, enclosure, scenario, aux)
 
     out.append(f"## Cells: {build}, {location}, {ENCLOSURES[enclosure].name}, "
-               f"loads '{scenario}'\n")
+               f"loads '{scenario}', AUX loads '{aux}' {AUX_LOADS_A[aux]} A\n")
     out.append(f"Ambient {LOCATIONS[location].ambient_c:.0f} C, enclosure base "
                f"{sel['t_base_c']:.0f} C ({sel['p_total_w']:.1f} W in the module).\n")
     out.append("| Slot | Class | Device | Load (A) | Path R hot (mOhm) | Drop (mV) | "
@@ -351,7 +359,7 @@ def report(build: str, location: str, enclosure: str, scenario: str) -> str:
         c = CLASSES[k]
         x = channel_loss(c, i)
         out.append(
-            f"| OUT{n} | {c.name} | {c.device} | {i:.0f} | {c.r_path_mohm():.2f} | "
+            f"| OUT{n} | {c.name} | {c.device} | {i:g} | {c.r_path_mohm():.2f} | "
             f"{x['drop_mv']:.0f} | {x['p_total_w']:.2f} | {tj:.0f} |"
         )
 
@@ -406,8 +414,9 @@ def main() -> None:
     parser.add_argument("--location", choices=LOCATIONS, default="cab")
     parser.add_argument("--enclosure", choices=ENCLOSURES, default="plate")
     parser.add_argument("--scenario", choices=SCENARIOS, default="rated")
+    parser.add_argument("--aux", choices=AUX_LOADS_A, default="front")
     args = parser.parse_args()
-    print(report(args.build, args.location, args.enclosure, args.scenario))
+    print(report(args.build, args.location, args.enclosure, args.scenario, args.aux))
 
 
 if __name__ == "__main__":

@@ -19,10 +19,10 @@ not started. Part numbers are candidates until the BOM is frozen — see
 |---|---|
 | Main outputs | 4 high-side solid-state, each slot one of three classes |
 | Classes | **S** 10 A (PROFET+2, PWM) · **M** 20 A (PROFET+2, PWM) · **L** 40 A (discrete FETs + smart driver, reverse-blocking) |
-| JK system | 2016 two-door Rubicon. Two modules on one bus: front (glovebox, `MMSS`) — light bar, bumper pods, ditch lights, front rock lights, compressor and winch on AUX; rear (inside the Tuffy cargo enclosure, `SSSS`) — RIGID Chase 90133 on the AUX bank, plus slots for rear floods, rear rock lights and camp lights if fitted |
-| AUX outputs | 4 × 5 A coil drivers: ARB twin compressor relay, winch isolator contactor, indicator, spare |
+| JK system | 2016 two-door Rubicon. Two modules on one bus: front (glovebox, `MMSS`) — light bar, bumper pods, ditch lights, front rock lights, compressor and winch on AUX; rear (inside the Tuffy cargo enclosure, `SSSS`) — RIGID Chase 90133 (AUX bank plus one S output) and a rear flood, with slots for rear rock lights and camp lights if fitted |
+| AUX outputs | 4 × 5 A drivers: ARB twin compressor relay, winch isolator contactor, indicator, spare on the front module; four of the RIGID Chase's five functions on the rear |
 | Inputs | 8 × configurable (ground-switched, 12 V-switched, analog 0–16 V, frequency) + ignition/wake |
-| Protection | Hardware short-circuit trip per channel, firmware instantaneous + I²t e-fuse, retries, interlocks, load shed, thermal derating |
+| Protection | Hardware short-circuit trip per channel, firmware instantaneous + I²t e-fuse, retries, interlocks, load shed, thermal derating, per-output supply limit for 12 V-only lamps (24 V jump start) |
 | CAN | Accessory bus 500 kbit/s (control + telemetry, [DBC](can/pcm.dbc)); JK CAN-IHS 125 kbit/s receive-only in hardware; OBD-II port listen-only, optional standard-PID polling |
 | Autonomy | Per-output rules on inputs, ignition, panel buttons, vehicle signals (speed, RPM, high beam), battery voltage, load current; timers and interlocks |
 | Compressor | ARB twin keeps its relay and pressure switch; the module drives the coil, interlocks it to the engine, detects running from coil current, stops on a continuous-run limit |
@@ -92,7 +92,7 @@ cd power-control-module
 python3 tools/budget.py                    # JK build: MMSS, cab, printed shell + plate
 python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
 python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
-python3 tools/budget.py --build SSSS --location rear_cargo --scenario jk_rear_expected
+python3 tools/budget.py --build SSSS --location tuffy --scenario jk_rear_expected --aux rear
 python3 tools/gen_dbc.py --modules 2 --out can/pcm-jk.dbc   # after editing can/pcm.dbc
 python3 -m pytest tools                    # margin and generator checks (pytest from the repo's dev env)
 ```

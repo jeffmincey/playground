@@ -207,8 +207,11 @@ accessories, fitted on every power-board variant.
 | Inductive loads | The integrated output clamp absorbs relay-coil energy; economised coils suppress their own back-EMF; large plain solenoids get a freewheel diode at the coil |
 | Connector | J7 ([08](08-mechanical-and-wiring.md#j7--aux-and-keep-alive-outputs)) |
 
-JK allocation: AUX1 ARB compressor relay, AUX2 winch isolator contactor,
-AUX3 rocker indicator, AUX4 spare ([12](12-compressor-and-winch.md)).
+JK allocation: on the front module AUX1 ARB compressor relay, AUX2 winch
+isolator contactor, AUX3 rocker indicator, AUX4 spare
+([12](12-compressor-and-winch.md)); on the rear module four of the RIGID
+Chase's five function wires, 0.3–1.3 A each
+([13](13-multi-module-system.md#rigid-chase-90133)).
 
 Because AUX1 feeds the ARB relay coil through ARB's pressure switch, its
 current sense doubles as a "compressor running" signal — see
@@ -224,7 +227,8 @@ current sense doubles as a "compressor running" signal — see
 | 4 | Inrush blanking and soft-start | per configuration | No |
 | 5 | Retry with back-off, then latch | s | No |
 | 6 | Load shed: low battery, module current budget, board temperature | s | No |
-| 7 | Upstream fuse on the battery feed (80 A at the battery for the JK `MMSS` build) | — | Yes — protects the feed cable only |
+| 7 | Supply limit per output (`max_supply_v`): 12 V-only loads off while VBAT is above it | 50 ms | No |
+| 8 | Upstream fuse on the battery feed (80 A at the battery for the JK `MMSS` build) | — | Yes — protects the feed cable only |
 
 **Wire-sizing rule:** size each output wire for the *hardware* trip level
 (layers 1–2), not the firmware fuse setting, because hardware is the layer
@@ -255,9 +259,10 @@ behaviour, not a control mode.
 | Overcurrent / I²t trip | Firmware, from ISENSE | `FAULT_OVERCURRENT` |
 | Short circuit | `CHn_FAULT_N` or ISENSE saturated | `FAULT_SHORT` |
 | Overtemperature | PROFET fault with normal current; L NTC | `FAULT_OVERTEMP` |
-| Open load (on) | Current below configured minimum while on | `WARN_OPEN_LOAD` |
+| Open load (on) | Current below `open_load_a` for 100 ms while on | `WARN_OPEN_LOAD` |
 | Open load (off) | `OUT_SENSE` with off-state pull-up (DEN on PROFET cells) | `WARN_OPEN_LOAD` |
 | Output powered externally | `OUT_SENSE` high while commanded off | `WARN_EXT_VOLTAGE` |
 | Latched after retries | Retry counter exhausted | `FAULT_LATCHED` |
+| Supply above the output's limit | VBAT > `max_supply_v` for 50 ms; output held off | `FAULT_OVERVOLTAGE` |
 
 Fault codes are listed in [06-can-protocol.md](06-can-protocol.md#fault-codes).

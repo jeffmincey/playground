@@ -39,6 +39,7 @@ rented test house or approximated as noted.
 | TR-5 | −14 V for 60 s, outputs commanded on and off | EL-5 | Bench supply, current limited to 100 A |
 | TR-6 | Short interruptions 10 µs – 100 ms | EL-1 | Programmable supply / MOSFET interrupter |
 | TR-7 | Winch-style sag: 13.5 → 8 V for 60 s, then 6.5 V for 5 s, with the winch contactor armed | EL-1 | Logic stays up; contactor drop-out voltage recorded |
+| TR-8 | Rear-module configuration (Chase outputs with `max_supply_v` 16 V): 24 V for 60 s, then a ramp 14 → 17 → 14 V | FN-21 | Bench supply. Those outputs off within 100 ms with `OVERVOLTAGE`, back on 1 s after the supply is below 15.5 V; outputs without the field stay on |
 
 ## Thermal and enclosure
 
@@ -96,9 +97,9 @@ rented test house or approximated as noted.
 | SY-3 | Parked: IGN off, camp lights on the rear module for 4 h | FN-18 | Front module sleeps between wake-ups; its average current ≤ 0.3 mA |
 | SY-4 | State-change burst: front rock lights switched on with the rear module asleep | FN-18 | Rear rock lights follow within 1 s |
 | SY-5 | Rear feed under 25 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
-| SY-7 | RIGID Chase on the rear AUX bank: each function alone and combined (running + brake, reverse + brake, strobe) | — | The light shows the expected mode for every combination in RIGID's sheet |
-| EMC-1 | AM and FM reception and speaker noise on the head unit with every PWM output running, the keep-alive rail on and the engine idling | — | No new audible whine or reception loss compared with the modules unpowered |
 | SY-6 | Ground offset between front and rear modules with all rear loads on | EL-9 | CAN common-mode within the transceiver's range; no error frames |
+| SY-7 | RIGID Chase on the rear module: each of its five functions alone, then trail + brake, reverse + brake, brake while strobing, and all five on | FN-3 | Each function lights as RIGID's sheet describes and draws within ±30 % of its listed 14 V current (0.3 / 1.3 / 1.3 / 0.7 / 0.3 A); the sheet gives no priority between functions, so record which mode wins in each combination — the brake must always show (keep the strobe interlock, add others if needed) |
+| EMC-1 | AM and FM reception and speaker noise on the head unit with every PWM output running, the keep-alive rail on and the engine idling | — | No new audible whine or reception loss compared with the modules unpowered |
 
 ## Lamp keep-alive and Bluetooth
 
@@ -110,7 +111,7 @@ rented test house or approximated as noted.
 | KA-4 | Module unpowered, and keep-alive wire unplugged | FN-20 | Turn, position and hazard lamps all work (boot delay allowed) |
 | KA-5 | Keep-alive wire shorted to ground; lamp unplugged; D_f opened | FN-19 | eFuse trips and `KA_Fault` is reported; current band and flash-dip checks raise their faults |
 | KA-6 | Parked with keep-alive rules: hazards with the key off | FN-18 | Keep-alive on from the second flash; off 10 min after the last |
-| BT-1 | Bluetooth scan of the headlight with lights on and at keep-alive only | — | Services and characteristics listed; reachability at keep-alive recorded |
+| BT-1 | Bluetooth scan of the headlight from a phone, with the lights on and at keep-alive only; then from the head unit with the lights on | — | Services and characteristics listed; reachability at keep-alive recorded; head-unit result recorded (it only counts with the lights on and the phone seeing them) |
 | BT-2 | Capture and map the J-Link app's writes for each mode and brightness step | — | Mapping table, including any pairing or authentication |
 | BT-3 | Replay from a development board | — | Each mapped setting reproduced, or the protocol shown to be authenticated (stop) |
 

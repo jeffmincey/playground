@@ -146,11 +146,11 @@ Rear module (M1, cargo area):
 
 | Input | Mode | Wired to | Used by |
 |---|---|---|---|
-| IN1 | `ACTIVE_HIGH` | Reverse wire at the factory tail-light connector | Chase reverse/area light (AUX4), rear floods |
-| IN2 | `ACTIVE_HIGH` | Third-brake-light feed on the spare-tire carrier (verify brake-only) | Chase brake (AUX2), instant brake |
+| IN1 | `ACTIVE_HIGH` | Reverse wire at the factory tail-light connector | Chase reverse light (AUX4), rear flood (OUT1) |
+| IN2 | `ACTIVE_HIGH` | Third-brake-light feed on the spare-tire carrier (verify brake-only) | Chase brake (AUX2); holds the Chase strobe off |
 | IN3 | `FREQUENCY` | Left stop/turn at the tail-light connector | Turn / brake decode |
 | IN4 | `FREQUENCY` | Right stop/turn at the tail-light connector | Turn / brake decode |
-| IN5 | `ACTIVE_HIGH` | Tail-lamp circuit | Chase running (AUX1) |
+| IN5 | `ACTIVE_HIGH` | Tail-lamp circuit | Chase trail light (AUX1) |
 | IN6 | `ACTIVE_LOW` | Camp-light switch at the tailgate | Chase courtesy (OUT3), camp lights |
 | IN7, IN8 | `DISABLED` | Spare | — |
 | IGN | fixed | Same TIPM tap, carried in the front–rear trunk cable | Sleep, interlocks |

@@ -61,12 +61,12 @@ def test_closed_glovebox_at_full_rating_runs_an_asa_shell_too_hot():
 
 
 def test_rear_module_has_margin_even_without_the_plate():
-    t = build_thermal("SSSS", "rear_cargo", "printed", "rated")
+    t = build_thermal("SSSS", "rear_cargo", "printed", "rated", aux="rear")
     assert t["ok"] and t["t_base_c"] < ASA_HDT_C
 
 
 def test_rear_module_inside_the_tuffy_on_the_plate_has_margin():
-    t = build_thermal("SSSS", "tuffy", "plate", "rated")
+    t = build_thermal("SSSS", "tuffy", "plate", "rated", aux="rear")
     assert t["ok"] and t["t_base_c"] < ASA_HDT_C
 
 

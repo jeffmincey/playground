@@ -21,15 +21,16 @@ flowchart LR
         LB <-->|"50-pin slot interface"| PB
     end
     S1 --> BAR["Light bar"]
-    S2 --> PODS["Front pods"]
-    S3 --> REAR["Rear floods"]
-    S4 --> ROCK["Rock lights"]
+    S2 --> PODS["Bumper pods"]
+    S3 --> DITCH["Ditch lights"]
+    S4 --> ROCK["Front rock lights"]
     AUX -->|"coil"| ARBR["ARB relay +<br/>pressure switch"]
     ARBR --> COMP["ARB twin<br/>compressor"]
     AUX -->|"coil"| WCON["Winch isolator<br/>contactor"]
     WCON --> WINCH["Winch"]
     SW["ARB rocker, toggles,<br/>winch sense"] --> LB
-    TRL["Trailer harness<br/>reverse"] --> LB
+    TURN["Front turn sense"] --> LB
+    LB -->|"KA1 keep-alive"| INJ["Front turn-lamp<br/>injectors"]
     IGN["Ignition<br/>TIPM fuse tap"] --> LB
     LB <-->|"CAN1 accessory, 500 k"| PANEL["Switch panel /<br/>other modules"]
     LB -.->|"CAN2, DLC, 500 k<br/>listen / OBD polling"| DLC["OBD-II port"]
@@ -71,10 +72,10 @@ Naming is the slot classes in order. Every variant also carries the AUX bank.
 
 | Variant | Slots | Continuous total | Use |
 |---|---|---|---|
-| **`MMSS`** (JK default, laid out for rev A) | 20 + 20 + 10 + 10 | 60 A | Light bar, pods, rear floods, rock lights; compressor and winch on AUX |
+| **`MMSS`** (JK default, laid out for rev A) | 20 + 20 + 10 + 10 | 60 A | JK front module: light bar, pods, ditch lights, front rock lights; compressor and winch on AUX |
 | `LMSS` | 40 + 20 + 10 + 10 | 80 A | A single-motor compressor powered directly from the L slot |
 | `MMMM` | 4 × 20 | 80 A | Heavier lighting |
-| `SSSS` | 4 × 10 | 40 A | Rock-light zones, accessories; second module on the bus |
+| `SSSS` | 4 × 10 | 40 A | JK rear module: rear flood, RIGID Chase courtesy, rear rock and camp lights, with the Chase on AUX; rock-light zones, accessories |
 | `LLSS` | 40 + 40 + 10 + 10 | 100 A | Exceeds EL-8; needs a larger stud and feed. Not planned. |
 
 Total current is limited by the battery stud, feed cable and board copper

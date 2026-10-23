@@ -82,6 +82,11 @@ Retry policy (per output): default 3 retries with back-off 1 s, 5 s, 30 s,
 then `LATCHED`. The retry counter clears after 60 s without a trip. Coil
 outputs default to 1 retry: a shorted coil wire is not a transient.
 
+Open load: with `open_load_a` set, an on-state current below it for 100 ms
+raises the `OPEN_LOAD` warning (no action; the output stays on). Unset means
+no check — leave it unset on flashing loads such as a strobe, and on loads
+inside a channel's low-current error band (FN-3: ±0.3 A on the main outputs).
+
 ### System-level limits
 
 | Function | Default | Action |
@@ -91,6 +96,7 @@ outputs default to 1 retry: a shorted coil wire is not a transient.
 | Low-voltage shed, IGN off | `VBAT_EST` < 12.0 V for 60 s (per-output `shed_v`, `shed_delay_s`, `restore_v` override) | Shed outputs with `shed_ign_off: true`; restore at IGN on or above `restore_v` |
 | Low-voltage shed, IGN on | `VBAT_EST` < 11.5 V for 10 s | Shed by priority (charging system not keeping up) |
 | Cranking / winching | VBAT 6–9 V | Hold outputs; no shed; protection thresholds unchanged |
+| Supply limit, per output | `max_supply_v`, unset by default | VBAT above it for 50 ms → that output off with `OVERVOLTAGE`; back on, if still requested, once VBAT has stayed 0.5 V below it for 1 s. For 12 V-only loads — the RIGID Chase is rated 9–15 V — during a 24 V jump start or with a failed regulator. Uses the module's own VBAT, which is what its loads see. The module itself rides through 24 V (EL-4); outputs without the field stay on. |
 
 ## Rule engine
 

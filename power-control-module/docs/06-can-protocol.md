@@ -1,6 +1,6 @@
 # 06 — CAN protocol (accessory bus)
 
-Protocol version 0.3. The machine-readable definition is
+Protocol version 0.4. The machine-readable definition is
 [`can/pcm.dbc`](../can/pcm.dbc) (validated with `cantools`, strict mode);
 this page explains intent. If the two disagree, the DBC wins and this page
 is a bug.
@@ -9,8 +9,8 @@ Changes from 0.1: AUX outputs (`Command` byte 7, `Status` bits 56–59, new
 `Aux` frame), eight inputs (`Status` byte 1, new `Inputs2` frame), vehicle
 signal telemetry (`VehicleA`/`VehicleB`), a `Health` frame, `Status` flags
 regrouped, and fault codes 11–12. Changes from 0.2: keep-alive state and
-current in `Health`. Nothing implements an earlier version, so there is no
-compatibility mode.
+current in `Health`. Changes from 0.3: fault code 13 `OVERVOLTAGE`. Nothing
+implements an earlier version, so there is no compatibility mode.
 
 ## Bus parameters
 
@@ -178,6 +178,7 @@ Used in `Diag.OUTn_Fault` and `Aux.AUXn_Fault`.
 | 10 | `RETRY_WAIT` | No | Retry timer |
 | 11 | `RUN_LIMIT` | Yes | Load ran continuously longer than `max_load_on_s` (e.g. compressor leak); cleared by re-toggling the enabling input or `FaultReset` |
 | 12 | `FEEDBACK_MISMATCH` | No (reported while true) | The feedback input disagrees with the commanded state (e.g. contactor failed to close, or welded) |
+| 13 | `OVERVOLTAGE` | No (reported while true) | VBAT above the output's `max_supply_v`; the output is off until VBAT has stayed 0.5 V below it for 1 s ([07](07-firmware.md#system-level-limits)) |
 
 ## Configuration access
 
@@ -199,8 +200,8 @@ Parameter groups:
 | Group | Range | Content |
 |---|---|---|
 | `0x01` | `0x0100–0x01FF` | Module: base ID, bitrate, termination, sleep timer, module current budget, host timeout |
-| `0x10–0x13` | per main output | Rating, I²t time constant, inrush blanking, soft-start, PWM frequency/default duty, retries, back-off, `on_host_loss`, `hold_s`, load-shed threshold, feedback |
-| `0x14–0x17` | per AUX output | Rating, retries, `on_host_loss`, `hold_s`, `max_load_on_s`, feedback |
+| `0x10–0x13` | per main output | Rating, I²t time constant, inrush blanking, soft-start, PWM frequency/default duty, retries, back-off, `on_host_loss`, `hold_s`, load-shed threshold, open-load threshold, supply limit, feedback |
+| `0x14–0x17` | per AUX output | Rating, retries, `on_host_loss`, `hold_s`, `max_load_on_s`, open-load threshold, supply limit, feedback |
 | `0x20–0x27` | per input | Mode, thresholds, debounce, inversion, pull-up/down |
 | `0x30–0x3F` | rules | Rule slots (see [07](07-firmware.md#rule-engine)) |
 | `0x40–0x4F` | vehicle signals | Signal map entries: bus, ID or OBD PID, bit position, scale, timeout |

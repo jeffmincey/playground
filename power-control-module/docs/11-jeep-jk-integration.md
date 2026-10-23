@@ -41,6 +41,11 @@ Thermal figures from `python3 tools/budget.py`. Something crosses the
 firewall either way; in the cab it is mostly thin signal wire and one 6 AWG
 feed, and everything electronic lives in the cooler, drier place.
 
+The engine bay remains a supported alternative (decision D-19), still with a
+printed shell — in PAHT-CF on the aluminium plate, with a silicone gasket and
+the other changes listed in [08](08-mechanical-and-wiring.md#engine-bay-build).
+Log temperatures at both candidate spots before choosing (Q-14).
+
 Location in the cab: high on the passenger side under the dash, clear of the
 HVAC box and the steering column, and **above floor level** — JK floors are
 drained, hosed out and get wet in water crossings. Check the space with a

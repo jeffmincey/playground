@@ -27,10 +27,10 @@ not started. Part numbers are candidates until the BOM is frozen — see
 | Autonomy | Per-output rules on inputs, ignition, panel buttons, vehicle signals (speed, RPM, high beam), battery voltage, load current; timers and interlocks |
 | Compressor | ARB twin keeps its relay and pressure switch; the module drives the coil, interlocks it to the engine, detects running from coil current, stops on a continuous-run limit |
 | Winch | Isolator contactor armed from the panel, auto-disarmed when driving or after a timeout, hardwired override that works without the module, welded-contact detection |
-| Mounting | In the cab; ASA shell printed on a Bambu X1C over a 6 mm aluminium heat-sink plate |
+| Mounting | In the cab (default): ASA shell printed on a Bambu X1C over a 6 mm aluminium heat-sink plate. Engine bay supported: PAHT-CF shell on the same plate, or a die-cast box |
 | Expansion | Up to 4 modules per bus (16 main outputs) |
 | Sleep current | ≤ 250 µA requirement, 193 µA estimated |
-| Environment | Components −40…+85 °C; IP65 cab build; ISO 16750 / ISO 7637 design targets |
+| Environment | Grade 1 (−40…+125 °C) parts; IP65 cab build, IP67 engine-bay build; ISO 16750 / ISO 7637 design targets |
 
 ## "Different flavors" of channel
 
@@ -84,6 +84,7 @@ The numbers in the docs come from `tools/budget.py` (standard library only):
 cd power-control-module
 python3 tools/budget.py                    # JK build: MMSS, cab, printed shell + plate
 python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
+python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
 python3 -m pytest tools                    # margin checks (pytest from the repo's dev env)
 ```
 

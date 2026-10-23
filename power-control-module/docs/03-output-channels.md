@@ -30,15 +30,22 @@ before the BOM is frozen.
 
 Model (`python3 tools/budget.py`):
 T<sub>j</sub> = ambient + P<sub>module</sub> × R<sub>th,enclosure</sub>
-+ P<sub>switch</sub> × R<sub>th,j-base</sub>, with every channel at its
-rating, AUX coils at their JK loads and 0.5 W of logic. Assumptions:
-junction-to-base S 15 K/W, M 12 K/W, L 20 K/W per FET; enclosure-to-ambient
-1.5 K/W (die-cast aluminium on vehicle metal), 2.5 K/W (printed shell on a
-6 mm aluminium base plate), 6 K/W (printed shell only); hot
-R<sub>DS(on)</sub> = 2× for PROFET, 1.8× for discrete FETs at 1.2 mΩ each.
++ P<sub>switch</sub> × R<sub>th,j-base</sub>, with AUX coils at their JK
+loads and 0.5 W of logic. Assumptions: junction-to-base S 15 K/W, M 12 K/W,
+M+ 8 K/W, L 20 K/W per FET; enclosure-to-ambient 1.5 K/W (die-cast aluminium
+on vehicle metal), 2.5 K/W (printed shell on a 6 mm aluminium base plate),
+6 K/W (printed shell only); hot R<sub>DS(on)</sub> = 2× for PROFET, 1.8× for
+discrete FETs at 1.2 mΩ each. Design ambients: cab 65 °C, engine bay 85 °C
+(front of the bay, moving), engine-bay hot spot 105 °C (slow crawl on a
+summer day) — the engine-bay figures are assumptions until the vehicle is
+logged.
 
-JK build — `MMSS` in the cab (65 °C), printed shell on an aluminium plate,
-6.4 W in the module, base plate at 81 °C:
+Two limits apply: hottest junction ≤ 135 °C (15 °C below 150 °C), and
+enclosure base ≤ 115 °C, because the base stands in for the logic-board
+temperature and Grade 1 parts are rated to 125 °C.
+
+JK build — `MMSS` in the cab, printed shell on an aluminium plate, every
+slot at its rating, 6.4 W in the module, base plate at 81 °C:
 
 | Slot | Class | I cont (A) | Path R hot (mΩ) | Drop (mV) | Loss (W) | T<sub>j</sub> est (°C) |
 |---|---|---:|---:|---:|---:|---:|
@@ -47,31 +54,51 @@ JK build — `MMSS` in the cab (65 °C), printed shell on an aluminium plate,
 | OUT3 | S | 10 | 8.80 | 88 | 0.88 | 94 |
 | OUT4 | S | 10 | 8.80 | 88 | 0.88 | 94 |
 
-Hottest cell for every build, location and enclosure (pass = ≤ 135 °C, i.e.
-15 °C below the 150 °C limit):
+Hottest junction / enclosure base (°C) with **every slot at its rating**
+(bold = over a limit):
 
-| Build | Location | Enclosure | Module loss (W) | Base (°C) | Hottest T<sub>j</sub> (°C) | Pass |
-|---|---|---|---:|---:|---:|---|
-| MMSS | cab | Aluminium box | 6.4 | 75 | 100 | yes |
-| **MMSS** | **cab** | **Printed shell + Al plate** | **6.4** | **81** | **106** | **yes** |
-| MMSS | cab | Printed shell only | 6.4 | 104 | 128 | yes, but the shell sits above ASA's 100 °C HDT |
-| MMSS | engine bay | Aluminium box | 6.4 | 95 | 120 | yes |
-| MMSS | engine bay | Printed shell + Al plate | 6.4 | 101 | 126 | yes, with a PET-CF / PAHT-CF shell |
-| MMSS | engine bay | Printed shell only | 6.4 | 124 | 148 | **no** |
-| LMSS | cab | Aluminium box | 8.2 | 77 | 102 | yes |
-| LMSS | cab | Printed shell + Al plate | 8.2 | 85 | 110 | yes |
-| LMSS | cab | Printed shell only | 8.2 | 114 | 139 | **no** |
-| LMSS | engine bay | Aluminium box | 8.2 | 97 | 122 | yes |
-| LMSS | engine bay | Printed shell + Al plate | 8.2 | 105 | 130 | yes, with a PET-CF / PAHT-CF shell |
-| LMSS | engine bay | Printed shell only | 8.2 | 134 | 159 | **no** |
+| Build | Location | Aluminium box | Printed shell + Al plate | Printed shell only |
+|---|---|---:|---:|---:|
+| MMSS | cab | 100 / 75 | **106 / 81** (JK default) | 128 / 104 |
+| MMSS | engine bay | 120 / 95 | 126 / 101 | **148** / **124** |
+| MMSS | engine-bay hot spot | **140** / 115 | **146** / **121** | **168** / **144** |
+| M+MSS | cab | 99 / 74 | 105 / 81 | 127 / 102 |
+| M+MSS | engine bay | 119 / 94 | 125 / 101 | **147** / **122** |
+| M+MSS | engine-bay hot spot | **139** / 114 | **145** / **121** | **167** / **142** |
+| LMSS | cab | 102 / 77 | 110 / 85 | **139** / 114 |
+| LMSS | engine bay | 122 / 97 | 130 / 105 | **159** / **134** |
+| LMSS | engine-bay hot spot | **142** / **117** | **150** / **125** | **179** / **154** |
+
+Hottest junction / enclosure base (°C) with the **expected JK loads**
+(light bar 20 A, pods 12 A, rear floods 8 A, rock lights 4 A):
+
+| Build | Location | Aluminium box | Printed shell + Al plate | Printed shell only |
+|---|---|---:|---:|---:|
+| MMSS | cab | 96 / 71 | 100 / 75 | 114 / 89 |
+| MMSS | engine bay | 116 / 91 | 120 / 95 | 134 / 109 |
+| MMSS | engine-bay hot spot | **136** / 111 | **140** / **115** | **154** / **129** |
+| M+MSS | cab | 79 / 70 | 82 / 73 | 94 / 84 |
+| M+MSS | engine bay | 99 / 90 | 102 / 93 | 114 / 104 |
+| M+MSS | engine-bay hot spot | 119 / 110 | 122 / 113 | 134 / **124** |
+
+`M+MSS` is the `MMSS` board with the light-bar slot built from the
+BTS50015-1TAD (TO-263-7) instead of the BTS7002 — same slot interface, about
+40 % less loss at 20 A.
 
 Conclusions:
 
-- The M cell is the hottest part in every case, which is why M is rated
-  20 A and firmware derates it above 65 °C board temperature.
-- A printed enclosure needs the aluminium base plate: plastic alone traps
-  the heat (and the shell ends up above its own softening point).
-- The JK choice — cab, printed shell, aluminium plate — leaves ~30 °C of
+- The M cell carrying the light bar is the hottest part in every case.
+- A printed enclosure needs the aluminium base plate in every location;
+  printed-only traps the heat, and even where the junctions pass, the shell
+  runs above ASA's 100 °C softening point.
+- **Engine bay, printed shell on the plate, is viable** at 85 °C ambient
+  for both full-rating and expected loads. At a 105 °C hot spot it needs the
+  low-loss M+ part on the light-bar slot, and full-rating operation of every
+  slot is not sustainable there in any enclosure — firmware derating
+  (based on estimated junction temperature,
+  [07](07-firmware.md#system-level-limits)) covers that corner. Requirements
+  for that build are in [08](08-mechanical-and-wiring.md#engine-bay-build).
+- The JK default — cab, printed shell, aluminium plate — leaves ~30 °C of
   margin.
 
 Thermal resistances are the weakest assumption in these tables. They are

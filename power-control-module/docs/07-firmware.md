@@ -87,7 +87,7 @@ outputs default to 1 retry: a shorted coil wire is not a transient.
 | Function | Default | Action |
 |---|---|---|
 | Module current budget | 60 A for `MMSS`, 80 A for `LMSS` (EL-8) | Fold back PWM-capable outputs, then shed by priority |
-| Thermal derating | Board > 85 °C | M-class limit derates linearly to 50 % at 105 °C; > 110 °C everything except `critical` outputs off |
+| Thermal derating | Estimated junction > 125 °C, per channel (board NTC + that channel's loss × its R<sub>th</sub>, calibrated in TH-1) | PWM-capable outputs fold back duty, others shed by priority, until the estimate is back under 120 °C; board > 115 °C → everything except `critical` outputs off. Working on estimated junction temperature rather than fixed board thresholds lets the same firmware run the cab and engine-bay builds. |
 | Low-voltage shed, IGN off | VBAT < 12.0 V for 60 s | Shed outputs with `shed_ign_off: true`; restore at IGN on |
 | Low-voltage shed, IGN on | VBAT < 11.5 V for 10 s | Shed by priority (charging system not keeping up) |
 | Cranking / winching | VBAT 6–9 V | Hold outputs; no shed; protection thresholds unchanged |

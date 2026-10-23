@@ -30,6 +30,23 @@ def test_printed_only_enclosure_is_rejected_for_the_engine_bay():
     assert t["tj_hottest_c"] > TJ_MAX_C - TJ_MARGIN_C
 
 
+def test_engine_bay_expected_loads_fit_a_printed_shell_on_the_plate():
+    t = build_thermal("MMSS", "engine_bay", "plate", "jk_expected")
+    assert t["ok"], (t["tj_hottest_c"], t["t_base_c"])
+
+
+def test_hot_engine_bay_needs_the_low_loss_light_bar_part():
+    plain = build_thermal("MMSS", "engine_bay_hot", "plate", "jk_expected")
+    low_loss = build_thermal("M+MSS", "engine_bay_hot", "plate", "jk_expected")
+    assert not plain["ok"]
+    assert low_loss["ok"], (low_loss["tj_hottest_c"], low_loss["t_base_c"])
+
+
+def test_printed_only_is_rejected_in_the_hot_engine_bay_even_at_expected_loads():
+    t = build_thermal("M+MSS", "engine_bay_hot", "printed", "jk_expected")
+    assert not t["base_ok"]
+
+
 def test_base_plate_beats_printed_only():
     for location in ("cab", "engine_bay"):
         plate = build_thermal("MMSS", location, "plate")["tj_hottest_c"]

@@ -22,6 +22,9 @@
 | D-16 | Winch isolator: sealed continuous-duty contactor with economised coil (EV200 class), hardwired override, feedback on IN3/IN4 | Engine-bay temperature, fording, fail-safe open, works with the module dead | Proposed |
 | D-17 | Inputs raised from 4 to 8 | ARB rocker, reverse, two winch feedback signals and physical light toggles outgrew four inputs | Proposed |
 | D-18 | CAN-IHS is the primary vehicle tap; the OBD port is secondary | The cluster lives on CAN-IHS, so speed/RPM/lamp state are likely there; the OBD port may be a quiet diagnostic bus | Proposed — confirm by sniffing (Q-10) |
+| D-19 | Engine-bay build is a supported alternative: printed PAHT-CF shell on the aluminium plate (or a die-cast box), silicone gasket, compression limiters, M+ part on the light-bar slot for hot spots | Thermal model passes at 85 °C ambient and, with the M+ part, at a 105 °C hot spot; sealing a printed shell is the main risk and is tested (EV-1, EV-4). See [08](08-mechanical-and-wiring.md#engine-bay-build). | Proposed |
+| D-20 | Grade 1 (−40…+125 °C) electronics in every build | One BOM for both locations | Proposed |
+| D-21 | Thermal derating on estimated junction temperature, not fixed board thresholds | Same firmware works in the cab and the engine bay | Proposed |
 
 ## Open questions
 
@@ -33,7 +36,7 @@ Answers change the design; listed with the default assumed until answered.
 | Q-2 | Light bar and pod part numbers (current, and whether their drivers dim on PWM)? | 50 in bar ~20 A, does not dim; pods ~12 A | M rating, PWM config |
 | Q-3 | ~~Read the JK's buses?~~ **Answered:** yes, interface to the Jeep where possible | — | D-5, D-7, D-18 |
 | Q-4 | CAN host: build the printed switch panel, buy a CAN keypad, or toggles only for now? | Panel in phase 5; IN5/IN6 toggles meanwhile | Panel design, `on_host_loss` defaults |
-| Q-5 | ~~Engine bay or cab?~~ **Answered:** cab (D-12), enclosure printed on the X1C (D-13) | — | Thermal, harness |
+| Q-5 | ~~Engine bay or cab?~~ **Answered:** cab (D-12), enclosure printed on the X1C (D-13); engine bay remains a supported alternative (D-19) | — | Thermal, harness |
 | Q-6 | Bluetooth/phone configuration wanted? | No for rev A; companion board later | Logic board connector reservation |
 | Q-7 | Is a higher channel count expected (e.g. rock-light zones)? | Second module on the bus | Whether to lay out an `SSSS` variant |
 | Q-8 | Other vehicles in scope (JL, TJ, trucks) and their bus speeds? | JK only, others via config | Vehicle signal map, bitrate options |
@@ -42,13 +45,14 @@ Answers change the design; listed with the default assumed until answered.
 | Q-11 | Winch model and its maximum current draw? | 8–12 k lb class, ≤ 500 A | Contactor choice (EV200 vs GV200 class), feed protection |
 | Q-12 | Keep the ARB rocker as the compressor switch, or move it to the panel? | Keep it (IN1), with its indicator on AUX3 | IN1/AUX3 allocation |
 | Q-13 | Under-dash space and firewall route on this JK? | Passenger side, existing grommet | Enclosure shape, harness lengths |
+| Q-14 | Actual temperatures at the candidate mounting spots (cab and engine bay), including a summer crawl and a heat soak after shutdown? | Cab 65 °C, engine bay 85 °C / 105 °C hot spot | Location choice, M vs M+ on the light-bar slot, enclosure |
 
 ## Roadmap
 
 | Phase | Scope |
 |---|---|
 | 0 — now | This design package: requirements, architecture, protocol, budgets |
-| 0.5 | **Sniff the JK** with a USB-CAN adapter in listen-only mode (CAN-IHS and the OBD port) and confirm D-18 / the OBD polling need; print a PLA mock-up of the module and panel to check under-dash space. Both are cheap and settle questions before schematics freeze. |
+| 0.5 | **Sniff the JK** with a USB-CAN adapter in listen-only mode (CAN-IHS and the OBD port) and confirm D-18 / the OBD polling need; print a PLA mock-up of the module and panel to check under-dash space; log temperatures at the candidate spots for a week (Q-14). All three are cheap and settle questions before schematics freeze. |
 | 1 | Schematics in KiCad for the logic board and the `MMSS` power board (with AUX bank); part selection locked; review |
 | 2 | Layout, fab, bring-up (BU-*), protection tests (PR-*) |
 | 3 | Firmware: protection + CAN protocol + rule engine + vehicle signal map; host config tool (Python) |

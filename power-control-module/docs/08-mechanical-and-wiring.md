@@ -13,8 +13,8 @@ ASA's softening point.
 |---|---|
 | Base plate | 6 mm 6061 aluminium, ~170 × 130 mm, flat-bar stock or laser/water-jet cut; 4 × M6 mounting holes on the plate, outside the shell |
 | Heat path | Power board → 1 mm gap pad → plate → vehicle structure. Bolt the plate to metal where possible. |
-| Shell | ASA printed on the X1C (cab). Engine-bay builds: PET-CF or PAHT-CF (see [materials](#printed-materials)). Target outside 160 × 120 × 50 mm. |
-| Seal | Groove in the shell rim with 2 mm silicone cord, or a printed TPU 95A gasket; ~25 % compression; screws every ≤ 50 mm around the rim |
+| Shell | ASA printed on the X1C (cab). Engine-bay builds: PAHT-CF, see [engine-bay build](#engine-bay-build). Target outside 160 × 120 × 50 mm. |
+| Seal | Groove in the shell rim with 2 mm silicone cord, or a printed TPU 95A gasket (cab only); ~25 % compression; screws every ≤ 50 mm around the rim |
 | Fasteners | M3/M4 brass heat-set inserts in the shell; never self-tapping screws into plastic for anything that will be opened again |
 | Connectors | Flange-mount sealed receptacles bolted through the shell wall (with their flange gaskets and a backing plate), short pigtails to board headers inside |
 | Board stack | Power board (on the plate) → 2 × 25 board-to-board header + 2 × M3 standoffs → logic board |
@@ -35,9 +35,9 @@ reseller quoting Bambu) — confirm on the current data sheets:
 | **ASA** | 100 °C (92 °C @ 1.8 MPa) | Cab shell, panel bezel, cab brackets | Prints well in the X1C's enclosed chamber; UV-stable |
 | PC | 117 °C | Cab shell if ASA creeps in testing | Must be dried; warps more |
 | ASA-CF | 110 °C | Stiffer cab brackets | Hardened nozzle |
-| **PET-CF** | 205 °C (182 °C @ 1.8 MPa) | Engine-bay shell or brackets (relay, contactor, connector holders) | Hardened steel nozzle; dry before printing |
-| **PAHT-CF** | 194 °C | Engine-bay parts near the battery and the engine | Hardened steel nozzle required; nylon absorbs water within hours — dry it and print from a dry box |
-| TPU 95A | — | Gaskets, grommets, cable boots | Feed from an external spool, not through the AMS |
+| **PET-CF** | 205 °C (182 °C @ 1.8 MPa) | Engine-bay brackets (relay, contactor, connector holders) | Hardened steel nozzle; dry before printing. Polyester can hydrolyse when held hot and wet for long periods, so it is second choice for the engine-bay shell. |
+| **PAHT-CF** | 194 °C (Vicat 220 °C) | Engine-bay shell (preferred) and parts near the battery | PA12-based: lower water uptake than ordinary PA-CF, and nylon 12 is the usual automotive fuel-line polymer. Hardened steel nozzle; resellers quote drying at 80 °C for 8–12 h and storage below 20 % RH. Hard to bond or coat (low surface energy). |
+| TPU 95A | — | Cab gaskets, grommets, cable boots | Not for engine-bay seals: it softens and takes a compression set at 100 °C+; use silicone there. Feed from an external spool, not through the AMS. |
 
 Rules for printed parts that must seal or carry load:
 
@@ -55,13 +55,76 @@ Rules for printed parts that must seal or carry load:
 | Part | Material | Notes |
 |---|---|---|
 | Module shell + service cap | ASA | Generated from the KiCad board outline once the PCBs are laid out (roadmap phase 4) |
-| Gasket | TPU 95A (or silicone cord) | |
+| Gasket | TPU 95A or silicone cord (cab build); silicone only in the engine bay | |
 | Under-dash mounting bracket | ASA | Fit-check first with a PLA mock-up of the module |
 | Switch panel bezel | ASA | See [switch panel](#switch-panel) |
 | Winch contactor and ARB relay brackets | PET-CF / PAHT-CF with inserts, or aluminium | Engine bay |
-| Firewall pass-through boot | TPU 95A | Around the 6 AWG feed and output bundle |
+| Firewall pass-through boot | TPU 95A on the cab side; silicone or EPDM grommet on the engine side | Around the 6 AWG feed and output bundle |
 
 The CAD lives in [`../mechanical/`](../mechanical/README.md).
+
+## Engine-bay build
+
+Mounting in the engine bay is a supported alternative to the cab (decision
+D-19), and the shell can still be printed — but only on the aluminium base
+plate, only in PAHT-CF (or PET-CF), and only with the changes below. The
+numbers behind it are in the [thermal check](03-output-channels.md#thermal-check):
+at 85 °C ambient the printed-shell-on-plate build runs its hottest junction
+at 120–126 °C with the base at 95–101 °C; at a 105 °C hot spot it needs the
+low-loss M+ part on the light-bar slot.
+
+### What changes from the cab build
+
+| Area | Cab build | Engine-bay build |
+|---|---|---|
+| Location | Under the dash | Front of the bay, high (above fording depth), clear of the exhaust, out of the battery's vent and spill path, **never on the engine**. Log the spot first (Q-14). |
+| Design ambient | 65 °C | 85 °C moving, 105 °C hot spot / slow crawl in summer, ~105 °C heat soak after shutdown (module mostly off) |
+| Shell | ASA | **PAHT-CF**, solid walls ≥ 3 mm (100 % infill, ≥ 6 perimeters), printed slow and hot enough for full layer fusion |
+| Base plate | 6 mm aluminium | Same, mandatory; bolt it to body metal through a thermal pad if the spot allows |
+| Gasket | Silicone cord or TPU | **Silicone** cord or cut sheet only (rated well past 150 °C) |
+| Clamping | Heat-set inserts in the shell | Bolts through the shell into **tapped holes in the plate**, with metal compression limiters in every shell hole so the plastic never carries the clamp load — CF-nylon creeps at 100 °C+ and would let the gasket relax |
+| Expansion | — | Aluminium and the printed shell expand differently (~0.2–0.5 mm over this size and a 100 °C swing): oversize the shell's bolt holes and let the silicone gasket take the slip |
+| Ingress target | IP65 | IP67, plus pressure wash and a hot-quench test (EV-4) |
+| Vent | Membrane vent | Same, mandatory: a hot module driven into cold water contracts its air and sucks water through any leak path |
+| Electronics | Grade 1 parts | Grade 1 parts — already the baseline for both builds ([05](05-logic-power-can.md#temperature-grade)) |
+| Light-bar slot | M (BTS7002-1EPP) | M+ (BTS50015-1TAD) if the logged spot runs above ~95 °C; otherwise M with firmware derating |
+| Harness | 6 AWG feed through the firewall; outputs back out | Feed under 1 m; rear floods and rock lights ~4.5 m, so 12 AWG to the floods; dash switches, panel and vehicle CAN through the firewall; GXL/TXL throughout |
+| Vehicle CAN | Short stubs under the dash | 2–3 m stubs through the firewall: prefer the 125 kbit/s CAN-IHS tap (more stub-tolerant than the 500 kbit/s OBD port) and check for error frames (CN-8). The TIPM gateway sits next to the battery, so both buses pass through its connectors in the bay; tapping there would be short but needs the factory wiring diagram. |
+| Extra tests | — | TH-5 heat soak, TH-6 hot-ambient operation, EV-4 hot quench, EV-5 fluids ([09](09-validation-plan.md)) |
+
+### Sealing a printed shell
+
+FDM walls are porous and layer seams leak under pressure; this is the main
+risk of a printed engine-bay enclosure, not the heat. In order of
+effectiveness:
+
+1. Make the gasket and the plate do the sealing: one continuous silicone
+   seal between the shell rim and the plate, connectors in the shell with
+   their own flange gaskets, nothing else penetrating the shell.
+2. Print the shell solid (100 % infill, thick walls) with good layer fusion;
+   put the seam away from the gasket path; print sealing faces facing up.
+3. If immersion testing still shows seepage, coat the outside. PA12 resists
+   coatings, so prepare the surface (abrade, flame or primer treatment) and
+   use a coating rated above the base temperature — many hobby epoxies
+   soften around 60–80 °C.
+4. If it still leaks, switch the shell to a die-cast aluminium box and keep
+   the printed parts for brackets, connector shrouds and strain reliefs.
+
+### What is not an option
+
+- A printed shell **without** the aluminium plate: 148 °C junctions and a
+  124 °C board even at 85 °C ambient.
+- ASA, PC, PETG or PLA shells in the engine bay (softening points at or below
+  the base temperature).
+- TPU gaskets in the engine bay.
+- Mounting on the engine or any engine-mounted bracket (heat and vibration).
+
+### Lowest-risk engine-bay version
+
+Die-cast aluminium enclosure (bought, machined for the connectors), with the
+X1C printing the PAHT-CF mounting bracket, connector shrouds, strain reliefs,
+and the relay and contactor brackets. It trades a few dollars and some
+machining for no sealing uncertainty.
 
 ## Switch panel
 
@@ -169,7 +232,8 @@ Rules:
 - Return each load to a clean chassis point near the load; do not bring load
   returns back to J2.
 - Cross the firewall through an existing grommet or a sealed bulkhead, with a
-  printed TPU boot; keep clear of the exhaust and the steering shaft.
+  boot (printed TPU on the cab side, silicone or EPDM on the engine side);
+  keep clear of the exhaust and the steering shaft.
 - Use cross-linked (GXL/TXL) wire in the engine bay, convoluted loom over
   everything, and a drip loop below each connector.
 - Mount the module with connectors facing down or sideways, never up.

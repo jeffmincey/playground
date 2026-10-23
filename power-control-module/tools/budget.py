@@ -8,6 +8,7 @@ keeps the docs honest.
 Usage:
     python3 tools/budget.py                                  # JK default: MMSS, cab, printed + plate
     python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
+    python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
 
 Standard library only. Device figures are typical datasheet values and are
 marked "verify" in the docs until the parts are locked in the BOM. Thermal
@@ -21,6 +22,9 @@ from dataclasses import dataclass
 
 TJ_MAX_C = 150  # PROFET+2 and automotive MOSFET junction limit
 TJ_MARGIN_C = 15  # design margin below TJ_MAX_C
+# The enclosure base stands in for the logic-board temperature. AEC-Q100
+# Grade 1 parts are rated to 125 C ambient; keep 10 C of margin.
+T_BASE_MAX_C = 115
 
 # --- Output channel classes -------------------------------------------------
 
@@ -69,6 +73,18 @@ CLASSES = {
         shunt_mohm=0.0,
         rth_j_base_k_per_w=12,
     ),
+    "M+": ChannelClass(
+        name="M+ (medium, low-loss part)",
+        device="BTS50015-1TAD PROFET, TO-263-7",
+        i_cont_a=25,
+        i_trip_a=100,
+        rds_25c_mohm=1.5,
+        n_parallel=1,
+        n_series=1,
+        hot_factor=2.0,
+        shunt_mohm=0.0,
+        rth_j_base_k_per_w=8,
+    ),
     "L": ChannelClass(
         name="L (large)",
         device="2x2 60 V N-FET back-to-back + smart gate driver",
@@ -115,7 +131,14 @@ def channel_loss(c: ChannelClass, current_a: float) -> dict:
 
 BUILDS = {
     "MMSS": ["M", "M", "S", "S"],  # JK default: lighting on the main outputs
+    "M+MSS": ["M+", "M", "S", "S"],  # engine-bay JK: low-loss part on the light-bar slot
     "LMSS": ["L", "M", "S", "S"],  # single-motor compressor on the L slot
+}
+
+# Per-slot load currents (A). None = every slot at its class rating.
+SCENARIOS = {
+    "rated": None,
+    "jk_expected": [20, 12, 8, 4],  # light bar, front pods, rear floods, rock lights
 }
 
 # Steady AUX loads in the JK build (A): ARB relay coil, winch contactor hold
@@ -137,14 +160,20 @@ ENCLOSURES = {
     "printed": Enclosure("Printed shell only", 6.0),
 }
 
-# Design ambient for each mounting location (C).
-LOCATIONS = {"cab": 65.0, "engine_bay": 85.0}
+# Design ambient for each mounting location (C). Engine-bay figures are
+# assumptions until the vehicle is logged: front of the bay while moving, and
+# a hot spot / slow crawl on a summer day.
+LOCATIONS = {"cab": 65.0, "engine_bay": 85.0, "engine_bay_hot": 105.0}
 
 
-def build_thermal(build: str, location: str, enclosure: str) -> dict:
+def build_thermal(build: str, location: str, enclosure: str, scenario: str = "rated") -> dict:
     """Module-level heat: Tj = ambient + P_total * Rth_enc + P_switch * Rth_j_base."""
     cells = [CLASSES[k] for k in BUILDS[build]]
-    losses = [channel_loss(c, c.i_cont_a) for c in cells]
+    currents = SCENARIOS[scenario] or [c.i_cont_a for c in cells]
+    for c, i in zip(cells, currents):
+        if i > c.i_cont_a:
+            raise ValueError(f"{i} A exceeds the {c.name} rating in {build}")
+    losses = [channel_loss(c, i) for c, i in zip(cells, currents)]
     aux = CLASSES["A"]
     aux_losses = [channel_loss(aux, i) for i in AUX_LOADS_A]
     p_total = (sum(x["p_total_w"] for x in losses)
@@ -152,12 +181,16 @@ def build_thermal(build: str, location: str, enclosure: str) -> dict:
     t_base = LOCATIONS[location] + p_total * ENCLOSURES[enclosure].rth_k_per_w
     tj = [t_base + x["p_per_switch_w"] * c.rth_j_base_k_per_w for c, x in zip(cells, losses)]
     return {
+        "currents_a": currents,
+        "losses_w": [x["p_total_w"] for x in losses],
         "p_total_w": p_total,
-        "i_total_a": sum(c.i_cont_a for c in cells),
+        "i_total_a": sum(currents),
         "t_base_c": t_base,
         "tj_c": tj,
         "tj_hottest_c": max(tj),
-        "ok": max(tj) <= TJ_MAX_C - TJ_MARGIN_C,
+        "tj_ok": max(tj) <= TJ_MAX_C - TJ_MARGIN_C,
+        "base_ok": t_base <= T_BASE_MAX_C,
+        "ok": max(tj) <= TJ_MAX_C - TJ_MARGIN_C and t_base <= T_BASE_MAX_C,
     }
 
 
@@ -234,39 +267,51 @@ SLEEP_ITEMS = [
 # --- Report ------------------------------------------------------------------
 
 
-def report(build: str, location: str, enclosure: str) -> str:
-    out: list[str] = []
-    sel = build_thermal(build, location, enclosure)
+def matrix(scenario: str, builds: list[str]) -> list[str]:
+    """Hottest junction / base temperature for each build, location and enclosure."""
+    out = ["| Build | Location | " + " | ".join(e.name for e in ENCLOSURES.values()) + " |",
+           "|---|---|" + "---:|" * len(ENCLOSURES)]
+    for b in builds:
+        for loc in LOCATIONS:
+            cells = []
+            for enc in ENCLOSURES:
+                t = build_thermal(b, loc, enc, scenario)
+                tj = f"{t['tj_hottest_c']:.0f}"
+                base = f"{t['t_base_c']:.0f}"
+                cells.append(f"{tj if t['tj_ok'] else f'**{tj}**'} / "
+                             f"{base if t['base_ok'] else f'**{base}**'}")
+            out.append(f"| {b} | {loc} | " + " | ".join(cells) + " |")
+    return out
 
-    out.append(f"## Cells at rating: {build}, {location}, {ENCLOSURES[enclosure].name}\n")
+
+def report(build: str, location: str, enclosure: str, scenario: str) -> str:
+    out: list[str] = []
+    sel = build_thermal(build, location, enclosure, scenario)
+
+    out.append(f"## Cells: {build}, {location}, {ENCLOSURES[enclosure].name}, "
+               f"loads '{scenario}'\n")
     out.append(f"Ambient {LOCATIONS[location]:.0f} C, enclosure base "
                f"{sel['t_base_c']:.0f} C ({sel['p_total_w']:.1f} W in the module).\n")
-    out.append("| Slot | Class | Device | I cont (A) | Path R hot (mOhm) | Drop (mV) | "
+    out.append("| Slot | Class | Device | Load (A) | Path R hot (mOhm) | Drop (mV) | "
                "Loss (W) | Tj est (C) |")
     out.append("|---|---|---|---:|---:|---:|---:|---:|")
-    for n, (k, tj) in enumerate(zip(BUILDS[build], sel["tj_c"]), start=1):
+    for n, (k, i, tj) in enumerate(zip(BUILDS[build], sel["currents_a"], sel["tj_c"]), start=1):
         c = CLASSES[k]
-        x = channel_loss(c, c.i_cont_a)
+        x = channel_loss(c, i)
         out.append(
-            f"| OUT{n} | {c.name} | {c.device} | {c.i_cont_a:.0f} | {c.r_path_mohm():.2f} | "
+            f"| OUT{n} | {c.name} | {c.device} | {i:.0f} | {c.r_path_mohm():.2f} | "
             f"{x['drop_mv']:.0f} | {x['p_total_w']:.2f} | {tj:.0f} |"
         )
 
-    out.append("\n## Hottest cell by build, location and enclosure\n")
-    out.append(f"Pass = hottest junction <= {TJ_MAX_C - TJ_MARGIN_C} C "
-               f"({TJ_MARGIN_C} C below the {TJ_MAX_C} C limit).\n")
-    out.append("| Build | Location | Enclosure | Module loss (W) | Base (C) | "
-               "Hottest Tj (C) | Pass |")
-    out.append("|---|---|---|---:|---:|---:|---|")
-    for b in BUILDS:
-        for loc in LOCATIONS:
-            for enc in ENCLOSURES:
-                t = build_thermal(b, loc, enc)
-                out.append(
-                    f"| {b} | {loc} | {ENCLOSURES[enc].name} | {t['p_total_w']:.1f} | "
-                    f"{t['t_base_c']:.0f} | {t['tj_hottest_c']:.0f} | "
-                    f"{'yes' if t['ok'] else '**no**'} |"
-                )
+    limit = TJ_MAX_C - TJ_MARGIN_C
+    out.append("\n## Hottest junction / enclosure base (C), every slot at its rating\n")
+    out.append(f"Bold = hottest junction above {limit} C ({TJ_MARGIN_C} C below the "
+               f"{TJ_MAX_C} C limit), or base above {T_BASE_MAX_C} C (logic-board "
+               f"parts are rated to 125 C).\n")
+    out.extend(matrix("rated", list(BUILDS)))
+    out.append("\n## Hottest junction / enclosure base (C), expected JK loads "
+               f"{SCENARIOS['jk_expected']} A\n")
+    out.extend(matrix("jk_expected", ["MMSS", "M+MSS"]))
 
     out.append("\n## Copper width (IPC-2221, 20 C rise, upper bound)\n")
     out.append("| Current (A) | 2 oz outer (mm) | 3 oz outer (mm) | 2 oz inner (mm) |")
@@ -305,8 +350,9 @@ def main() -> None:
     parser.add_argument("--build", choices=BUILDS, default="MMSS")
     parser.add_argument("--location", choices=LOCATIONS, default="cab")
     parser.add_argument("--enclosure", choices=ENCLOSURES, default="plate")
+    parser.add_argument("--scenario", choices=SCENARIOS, default="rated")
     args = parser.parse_args()
-    print(report(args.build, args.location, args.enclosure))
+    print(report(args.build, args.location, args.enclosure, args.scenario))
 
 
 if __name__ == "__main__":

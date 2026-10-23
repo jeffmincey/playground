@@ -64,8 +64,8 @@ Test methods are in [09-validation-plan.md](09-validation-plan.md).
 
 | ID | Requirement |
 |---|---|
-| EN-1 | Components rated for −40 °C to +85 °C ambient. JK installation is in the cab (design ambient 65 °C, decision D-12); full ratings to 65 °C, firmware derates above. |
-| EN-2 | Cab build: IP65 with a pressure-equalising membrane vent (printed shell on an aluminium base plate, decision D-13). Engine-bay builds: IP67. Connectors sealed when mated in both. |
+| EN-1 | Electronic components AEC-Q100/Q200 Grade 1 (−40…+125 °C) in every build. Module ambient: cab build −40…+85 °C (JK default, design point 65 °C, D-12); engine-bay build −40…+105 °C (D-19), with firmware derating on estimated junction temperature. |
+| EN-2 | Cab build: IP65 with a pressure-equalising membrane vent (printed ASA shell on an aluminium base plate, D-13). Engine-bay build: IP67 plus pressure wash and hot-quench (EV-4), printed PAHT-CF shell on the plate or a die-cast box. Connectors sealed when mated in both. |
 | EN-3 | Vibration per ISO 16750-3, body-mounted profile; no through-hole parts heavier than 5 g without adhesive staking. |
 | EN-4 | Conformal coating on both boards except connectors, test points and the USB port. |
 | EN-5 | Envelope target 160 × 120 × 50 mm, 4 × M6 mounting through the base plate. |

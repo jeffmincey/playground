@@ -48,6 +48,8 @@ rented test house or approximated as noted.
 | TH-2 | TH-1 at 65 °C ambient (oven), 2 h | EN-1 | No thermal shutdown; hottest junction within the budget prediction + 10 °C |
 | TH-3 | −40 °C cold start (freezer to −20 °C as approximation) | EN-1 | Normal start; current calibration within FN-3 |
 | TH-4 | Parked-cab soak: shell unpowered at 85 °C for 24 h, then gasket compression and insert pull-out checked | EN-2 | No warp beyond the gasket's compression range; inserts hold |
+| TH-5 | Engine-bay build: heat soak unpowered at 105 °C for 24 h, ten cycles to 25 °C | EN-1, EN-2 | No shell warp, gasket still compressed, bolts at torque (compression limiters) |
+| TH-6 | Engine-bay build: expected JK loads at 85 °C and 105 °C ambient, 2 h each | EN-1 | Junction estimate within 10 °C of the budget; derating engages above 125 °C estimated junction, never trips on temperature |
 
 ## Sleep and CAN
 
@@ -62,6 +64,7 @@ rented test house or approximated as noted.
 | CN-5 | Four modules on one bus, addresses 0–3 | FN-11 | No ID clashes, all controllable |
 | CN-6 | Module unpowered on a live vehicle bus | EL-10 | No error frames; bus load unchanged |
 | CN-7 | OBD polling (jumper fitted): request rate, whitelist, back-off when a scan tool is connected, stop on bus-off | FN-9 | ≤ 10 req/s; only `0x7DF` mode 01; pauses with a tester present |
+| CN-8 | Engine-bay build: vehicle taps with the real 2–3 m stub, scope on CAN-H/L at the tap | EL-10 | Clean edges; no error frames on the vehicle bus over a 30 min drive |
 
 ## Compressor and winch
 
@@ -81,6 +84,8 @@ rented test house or approximated as noted.
 | EV-1 | Spray and splash (IP65 intent) after thermal cycling; immersion 1 m for 30 min for engine-bay builds | EN-2 | Hose / tank; open and check inside for moisture |
 | EV-2 | Vibration, body-mounted profile | EN-3 | **lab**; approximation: 100 h on the vehicle off-road with a logging host |
 | EV-3 | Pressure wash on connectors | EN-2 | Garden test; no ingress |
+| EV-4 | Engine-bay build: hot quench — module running at 90 °C, then splashed and dunked in ~10 °C water for 5 min | EN-2 | No water inside (the fording case) |
+| EV-5 | Engine-bay build: printed coupons with oil, coolant, brake fluid, fuel and dilute battery acid, 24 h at 80 °C | EN-2 | No softening, cracking or swelling beyond the gasket's tolerance |
 
 ## Vehicle
 

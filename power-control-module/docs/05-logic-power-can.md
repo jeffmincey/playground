@@ -71,6 +71,20 @@ Check the pin map in STM32CubeMX for the 64-pin package; move to the
 100-pin package if the three FDCAN, USB, SWD, PWM timers and 17 analog
 inputs do not fit together.
 
+### Temperature grade
+
+Every electronic part is AEC-Q100/Q200 **Grade 1 (−40…+125 °C ambient)** in
+both builds, so one BOM serves the cab and the engine bay; the cab build just
+runs cooler and lives longer:
+
+- MCU in its −40…+125 °C temperature range (check the ordering code),
+- a 125 °C-rated automotive crystal — FDCAN needs crystal accuracy; the
+  internal RC oscillator is not good enough for CAN bit timing,
+- polymer or hybrid capacitors rated to 125 °C (electrolytic life roughly
+  halves for every 10 °C),
+- Grade 1 regulators, transceivers, TVS and EEPROM; gap pad and conformal
+  coating rated ≥ 150 °C.
+
 Other logic-board parts:
 
 | Part | Purpose |

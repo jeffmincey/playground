@@ -83,7 +83,7 @@ datasheet before ordering.
 | Function | Part | Notes |
 |---|---|---|
 | S switch | Infineon BTS7004-1EPP | Alt: BTS7006-1EPP, TI TPS1HB08-Q1 |
-| M switch | Infineon BTS7002-1EPP | Alt: BTS50015-1TAD for a 25–30 A M+ cell |
+| M switch | Infineon BTS7002-1EPP | Alt: BTS50015-1TAD (TO-263-7) as the M+ part on the light-bar slot of an engine-bay build — name implies 1.5 mΩ; a distributor lists 3 mΩ and 33 A, confirm on the datasheet |
 | L driver | TI TPS48111-Q1 | Alt: Infineon 2ED2410-EM (dual) |
 | L FETs | 60 V AEC-Q101, ≤ 1.3 mΩ, TOLL/sTOLL/LFPAK88 | 4 per L cell |
 | L shunt | 0.25 mΩ 4-terminal, ≥ 3 W | |
@@ -91,7 +91,8 @@ datasheet before ordering.
 | Ideal diode | TI LM74700-Q1 | Logic supply |
 | Buck | TI LMR3600x-Q1 class, 60 V | Low Iq |
 | AUX bank | Infineon BTS7008-2EPA ×2 | Alt: TI TPS2HB16-Q1 |
-| MCU | ST STM32G474 (64- or 100-pin) | Fallback: STM32G0B1 + MCP2518FD |
+| MCU | ST STM32G474 (64- or 100-pin), −40…+125 °C range | Fallback: STM32G0B1 + MCP2518FD |
+| Crystal | Automotive, 125 °C rated | FDCAN bit timing |
 | CAN PHY | TI TCAN1042-Q1 / NXP TJA1042 | ×3; passive when unpowered |
 | Analog mux | 16:1, 3.3 V (e.g. TMUX1116 / 74HC4067 class) | Slow channels: OUT_SENSE, ID, NTC |
 | Vehicle-PHY load switch | Small 5 V load switch (e.g. TPS22918 class) | Off in sleep |

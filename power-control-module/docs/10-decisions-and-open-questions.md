@@ -4,17 +4,24 @@
 
 | ID | Decision | Rationale | Status |
 |---|---|---|---|
-| D-1 | All outputs solid-state high-side; no relays | Request; also gives current measurement, PWM and diagnostics for free | Accepted |
-| D-2 | Three channel classes S 10 A / M 20 A / L 40 A | Covers lighting (S/M) and compressor (L) without over-building every channel; see [03](03-output-channels.md) | Proposed |
-| D-3 | Default variant `LMSS` | Matches the JK load list: compressor, bar, two light groups | Proposed — depends on Q-1 |
+| D-1 | All module outputs solid-state high-side; no relays inside the module | Request; also gives current measurement, PWM and diagnostics. Loads above the L rating (ARB twin, winch) keep their own relay/contactor outside the module (D-15, D-16). | Accepted |
+| D-2 | Three channel classes S 10 A / M 20 A / L 40 A | Covers lighting (S/M) and a single-motor compressor (L) without over-building every channel; see [03](03-output-channels.md) | Proposed |
+| D-3 | JK default variant **`MMSS`** (was `LMSS`) | The ARB twin keeps its relay, so all four main outputs are lighting; 60 A total allows a 6 AWG feed into the cab | Accepted (Q-1 answered) |
 | D-4 | Logic board + power board stack, cells as reusable layout blocks | Logic validated once; heavy copper only where needed; see [02](02-architecture.md#why-a-two-board-stack-instead-of-one-board) | Proposed |
-| D-5 | STM32G0B1 MCU | 2 × FDCAN + USB + ADC at low cost | Proposed |
+| D-5 | **STM32G474** MCU (was STM32G0B1) | Three FDCAN for accessory bus + OBD port + CAN-IHS. Fallback G0B1 + MCP2518FD if sleep current fails EL-7. | Proposed |
 | D-6 | Firmware language: C (STM32 LL) vs Rust (Embassy) | Both workable; C has more reference code for PROFET/TPS4811x | Open |
-| D-7 | Vehicle CAN is listen-only, enforced in hardware | Never risk disturbing vehicle ECUs | Accepted |
+| D-7 | Vehicle buses are listen-only, enforced in hardware — **amended**: optional, whitelisted OBD-II mode 01 polling on the OBD port, enabled by a solder jumper | The JK OBD port may be quiet without a tester; polling standard PIDs behind the TIPM gateway is what scan gauges do. CAN-IHS stays physically receive-only. | Proposed |
 | D-8 | "Current limiting" = trip + duty foldback, not linear limiting | Linear limiting at 40 A is > 100 W in a sealed box | Accepted |
 | D-9 | Reverse-battery blocking on logic and L channel only; S/M use PROFET ReverseON | Back-to-back FETs on every channel doubles power-stage parts for little benefit on LED loads | Proposed |
 | D-10 | Own protocol on 11-bit IDs, base `0x6A0`, with DBC | Simple to decode with any tool; CANopen keypad bridging can be a host function | Proposed |
 | D-11 | Rule engine is fixed function blocks, not a script | Verifiable; covers the stated use cases | Proposed |
+| D-12 | **Mount the JK module in the cab** | Lighting-only current; ~20 °C cooler; short CAN taps and dash runs; printed enclosure viable. See [11](11-jeep-jk-integration.md#mounting-location-cab). | Accepted (Q-5 answered) |
+| D-13 | **Printed ASA shell on a 6 mm aluminium base plate** (Bambu X1C) | Plate sinks the heat and takes the mounting loads; shell gives free-form connector placement. Printed-only fails thermally ([03](03-output-channels.md#thermal-check)). | Proposed |
+| D-14 | Fixed AUX bank: 4 × 5 A coil drivers on every power board | Compressor relay, winch contactor and indicators without spending main outputs | Proposed |
+| D-15 | ARB twin keeps ARB's relay, fuses and pressure switch; the module drives the coil | ~50 A under load exceeds the L rating; keeps ARB's tested loom; run detection from coil current | Accepted |
+| D-16 | Winch isolator: sealed continuous-duty contactor with economised coil (EV200 class), hardwired override, feedback on IN3/IN4 | Engine-bay temperature, fording, fail-safe open, works with the module dead | Proposed |
+| D-17 | Inputs raised from 4 to 8 | ARB rocker, reverse, two winch feedback signals and physical light toggles outgrew four inputs | Proposed |
+| D-18 | CAN-IHS is the primary vehicle tap; the OBD port is secondary | The cluster lives on CAN-IHS, so speed/RPM/lamp state are likely there; the OBD port may be a quiet diagnostic bus | Proposed — confirm by sniffing (Q-10) |
 
 ## Open questions
 
@@ -22,23 +29,28 @@ Answers change the design; listed with the default assumed until answered.
 
 | ID | Question | Default assumed | Affects |
 |---|---|---|---|
-| Q-1 | Exact compressor model (single or twin motor, running and peak current)? | Single motor, ≤ 45 A running, ≤ 150 A peak | L-cell rating, D-3 |
-| Q-2 | Light bar and pod part numbers (current, and whether their drivers dim on PWM)? | 50 in bar ~20 A, does not dim | M rating, PWM config |
-| Q-3 | Should the module read the JK's CAN-C bus (speed, gear, high beam), or wired inputs only? | Hardware fitted, signal map empty | J6, firmware effort |
-| Q-4 | What is the CAN host — a commercial CAN keypad (which one?), a custom switch panel, a phone bridge, or none at first? | None at first; autonomous rules + dash toggles | Protocol bridging, `on_host_loss` defaults |
-| Q-5 | Engine bay or in-cab mounting? | Engine bay | Thermal margin, harness |
+| Q-1 | ~~Exact compressor model?~~ **Answered:** ARB twin (CKMTA12), which includes its relay | — | D-3, D-15 |
+| Q-2 | Light bar and pod part numbers (current, and whether their drivers dim on PWM)? | 50 in bar ~20 A, does not dim; pods ~12 A | M rating, PWM config |
+| Q-3 | ~~Read the JK's buses?~~ **Answered:** yes, interface to the Jeep where possible | — | D-5, D-7, D-18 |
+| Q-4 | CAN host: build the printed switch panel, buy a CAN keypad, or toggles only for now? | Panel in phase 5; IN5/IN6 toggles meanwhile | Panel design, `on_host_loss` defaults |
+| Q-5 | ~~Engine bay or cab?~~ **Answered:** cab (D-12), enclosure printed on the X1C (D-13) | — | Thermal, harness |
 | Q-6 | Bluetooth/phone configuration wanted? | No for rev A; companion board later | Logic board connector reservation |
-| Q-7 | Is a higher channel count expected (e.g. 8 small channels for lockers, rock-light zones)? | Second module on the bus | Whether to lay out an `SSSS` or 8-channel S variant |
+| Q-7 | Is a higher channel count expected (e.g. rock-light zones)? | Second module on the bus | Whether to lay out an `SSSS` variant |
 | Q-8 | Other vehicles in scope (JL, TJ, trucks) and their bus speeds? | JK only, others via config | Vehicle signal map, bitrate options |
-| Q-9 | Build quantity (1–2 or a small batch)? | 2 | Enclosure (off-the-shelf vs machined), assembly method |
+| Q-9 | Build quantity (1–2 or a small batch)? | 2 | Assembly method |
+| Q-10 | JK model year, automatic or manual, factory radio type, aftermarket headlamps? | 2011+ automatic, factory radio, factory headlamps | CAN-IHS tap point, reverse/gear source, message IDs |
+| Q-11 | Winch model and its maximum current draw? | 8–12 k lb class, ≤ 500 A | Contactor choice (EV200 vs GV200 class), feed protection |
+| Q-12 | Keep the ARB rocker as the compressor switch, or move it to the panel? | Keep it (IN1), with its indicator on AUX3 | IN1/AUX3 allocation |
+| Q-13 | Under-dash space and firewall route on this JK? | Passenger side, existing grommet | Enclosure shape, harness lengths |
 
 ## Roadmap
 
 | Phase | Scope |
 |---|---|
 | 0 — now | This design package: requirements, architecture, protocol, budgets |
-| 1 | Schematics in KiCad for logic board and `LMSS` power board; part selection locked; review |
+| 0.5 | **Sniff the JK** with a USB-CAN adapter in listen-only mode (CAN-IHS and the OBD port) and confirm D-18 / the OBD polling need; print a PLA mock-up of the module and panel to check under-dash space. Both are cheap and settle questions before schematics freeze. |
+| 1 | Schematics in KiCad for the logic board and the `MMSS` power board (with AUX bank); part selection locked; review |
 | 2 | Layout, fab, bring-up (BU-*), protection tests (PR-*) |
-| 3 | Firmware: protection + CAN protocol + rule engine; host config tool (Python) |
-| 4 | Enclosure, harness, vehicle install (VH-*) |
-| 5 | Options: CAN bootloader, BLE companion board, `MMMM`/`SSSS` variants, CANopen keypad bridge |
+| 3 | Firmware: protection + CAN protocol + rule engine + vehicle signal map; host config tool (Python) |
+| 4 | Enclosure CAD from the board outlines, printed shell and brackets, harness, vehicle install (VH-*, CW-*) |
+| 5 | Switch panel; options: CAN bootloader, BLE companion board, `LMSS`/`SSSS` variants, CANopen keypad bridge |

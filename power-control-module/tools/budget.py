@@ -1,21 +1,26 @@
 """Back-of-envelope budgets for the power control module.
 
 Every number the design docs quote for dissipation, junction temperature,
-copper width, harness voltage drop and sleep current comes from this script,
-so changing an assumption here and re-running it keeps the docs honest.
+enclosure temperature, copper width, harness voltage drop and sleep current
+comes from this script, so changing an assumption here and re-running it
+keeps the docs honest.
 
 Usage:
-    python3 tools/budget.py              # all tables, markdown
-    python3 tools/budget.py --ambient 60 # re-run thermal at a cooler ambient
+    python3 tools/budget.py                                  # JK default: MMSS, cab, printed + plate
+    python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
 
 Standard library only. Device figures are typical datasheet values and are
-marked "verify" in the docs until the parts are locked in the BOM.
+marked "verify" in the docs until the parts are locked in the BOM. Thermal
+resistances are assumptions until validation test TH-1 measures them.
 """
 
 from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+
+TJ_MAX_C = 150  # PROFET+2 and automotive MOSFET junction limit
+TJ_MARGIN_C = 15  # design margin below TJ_MAX_C
 
 # --- Output channel classes -------------------------------------------------
 
@@ -31,7 +36,7 @@ class ChannelClass:
     n_series: int  # 2 for back-to-back (reverse-blocking) pairs
     hot_factor: float  # Rds(on) multiplier at hot junction
     shunt_mohm: float  # external shunt, 0 when sensing is integrated
-    rth_k_per_w: float  # junction to ambient per switch, as mounted (assumed)
+    rth_j_base_k_per_w: float  # junction to enclosure base, per switch (assumed)
 
     def r_path_mohm(self) -> float:
         """Hot on-resistance of the switch network, excluding the shunt."""
@@ -50,7 +55,7 @@ CLASSES = {
         n_series=1,
         hot_factor=2.0,
         shunt_mohm=0.0,
-        rth_k_per_w=25,
+        rth_j_base_k_per_w=15,
     ),
     "M": ChannelClass(
         name="M (medium)",
@@ -62,7 +67,7 @@ CLASSES = {
         n_series=1,
         hot_factor=2.0,
         shunt_mohm=0.0,
-        rth_k_per_w=20,
+        rth_j_base_k_per_w=12,
     ),
     "L": ChannelClass(
         name="L (large)",
@@ -74,23 +79,85 @@ CLASSES = {
         n_series=2,
         hot_factor=1.8,
         shunt_mohm=0.25,
-        rth_k_per_w=30,
+        rth_j_base_k_per_w=20,
+    ),
+    "A": ChannelClass(
+        name="AUX (coil driver)",
+        device="BTS7008-2EPA PROFET+2 dual, per channel",
+        i_cont_a=5,
+        i_trip_a=30,
+        rds_25c_mohm=8.0,
+        n_parallel=1,
+        n_series=1,
+        hot_factor=2.0,
+        shunt_mohm=0.0,
+        rth_j_base_k_per_w=30,
     ),
 }
 
 
-def channel_thermal(c: ChannelClass, current_a: float, ambient_c: float) -> dict:
+def channel_loss(c: ChannelClass, current_a: float) -> dict:
     r_one_hot = c.rds_25c_mohm * c.hot_factor
     i_per_switch = current_a / c.n_parallel
     p_per_switch = i_per_switch**2 * r_one_hot / 1000
     p_switches = p_per_switch * c.n_parallel * c.n_series
     p_shunt = current_a**2 * c.shunt_mohm / 1000
     return {
+        "p_per_switch_w": p_per_switch,
         "p_switches_w": p_switches,
         "p_shunt_w": p_shunt,
         "p_total_w": p_switches + p_shunt,
-        "tj_c": ambient_c + p_per_switch * c.rth_k_per_w,
         "drop_mv": current_a * (c.r_path_mohm() + c.shunt_mohm),
+    }
+
+
+# --- Builds, enclosures, locations -------------------------------------------
+
+BUILDS = {
+    "MMSS": ["M", "M", "S", "S"],  # JK default: lighting on the main outputs
+    "LMSS": ["L", "M", "S", "S"],  # single-motor compressor on the L slot
+}
+
+# Steady AUX loads in the JK build (A): ARB relay coil, winch contactor hold
+# (economised coil), rocker indicator LED, spare.
+AUX_LOADS_A = [0.2, 0.13, 0.05, 0.0]
+
+LOGIC_W = 0.5  # buck, LDO, MCU, transceivers, input pull-ups
+
+
+@dataclass(frozen=True)
+class Enclosure:
+    name: str
+    rth_k_per_w: float  # enclosure base to ambient, whole module (assumed)
+
+
+ENCLOSURES = {
+    "alu": Enclosure("Die-cast aluminium box on vehicle metal", 1.5),
+    "plate": Enclosure("Printed shell + 6 mm aluminium base plate", 2.5),
+    "printed": Enclosure("Printed shell only", 6.0),
+}
+
+# Design ambient for each mounting location (C).
+LOCATIONS = {"cab": 65.0, "engine_bay": 85.0}
+
+
+def build_thermal(build: str, location: str, enclosure: str) -> dict:
+    """Module-level heat: Tj = ambient + P_total * Rth_enc + P_switch * Rth_j_base."""
+    cells = [CLASSES[k] for k in BUILDS[build]]
+    losses = [channel_loss(c, c.i_cont_a) for c in cells]
+    aux = CLASSES["A"]
+    aux_losses = [channel_loss(aux, i) for i in AUX_LOADS_A]
+    p_total = (sum(x["p_total_w"] for x in losses)
+               + sum(x["p_total_w"] for x in aux_losses) + LOGIC_W)
+    t_base = LOCATIONS[location] + p_total * ENCLOSURES[enclosure].rth_k_per_w
+    tj = [t_base + x["p_per_switch_w"] * c.rth_j_base_k_per_w for c, x in zip(cells, losses)]
+    return {
+        "p_total_w": p_total,
+        "i_total_a": sum(c.i_cont_a for c in cells),
+        "t_base_c": t_base,
+        "tj_c": tj,
+        "tj_hottest_c": max(tj),
+        "ok": max(tj) <= TJ_MAX_C - TJ_MARGIN_C,
     }
 
 
@@ -131,14 +198,16 @@ def wire_drop_v(current_a: float, awg: int, length_m: float, round_trip: bool) -
     return current_a * AWG_MOHM_PER_M[awg] * metres / 1000
 
 
-# Example JK loads: (label, channel class, current A, AWG, one-way metres,
-# return wired back to battery rather than to a local chassis ground)
+# JK, module in the cab: (label, current A, AWG, one-way metres, return wired
+# back to the module's ground point rather than to a chassis ground at the load)
 EXAMPLE_LOADS = [
-    ("Battery feed to module", None, 80, 4, 1.0, False),
-    ("Compressor (OUT1, L)", "L", 40, 8, 1.5, True),
-    ("50 in light bar (OUT2, M)", "M", 20, 10, 3.0, True),
-    ("Rear floods (OUT3, S)", "S", 10, 14, 4.5, True),
-    ("Rock lights (OUT4, S)", "S", 6, 16, 3.0, True),
+    ("Battery feed, engine bay to cab module", 60, 6, 2.5, False),
+    ("Light bar (OUT1, M)", 20, 10, 3.5, True),
+    ("Front pods (OUT2, M)", 12, 12, 3.0, True),
+    ("Rear floods (OUT3, S)", 10, 14, 3.0, True),
+    ("Rock lights (OUT4, S)", 6, 16, 3.0, True),
+    ("ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
+    ("Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
 ]
 
 
@@ -148,15 +217,15 @@ EXAMPLE_LOADS = [
 SLEEP_ITEMS = [
     ("Buck regulator, no-load Iq", 1, 25),
     ("5 V -> 3.3 V LDO Iq", 1, 15),
-    ("MCU in STOP with RTC + EXTI", 1, 10),
-    ("CAN transceiver in standby", 2, 15),
-    ("PROFET+2 channel off-state", 3, 1),
-    ("L-channel gate driver, low-Iq mode", 1, 20),
+    ("MCU (STM32G474) in Stop 1 with RTC -- assumed, measure", 1, 90),
+    ("Accessory CAN transceiver in standby (remote wake)", 1, 15),
+    ("Vehicle CAN transceivers, power-gated off", 2, 0),
+    ("PROFET+2 devices off (4 single + 2 dual)", 6, 1),
     # Ground-switched inputs need a pull-up to wake the module, but the ADC
     # divider loads a weak pull-up below the threshold, so in sleep the 2.2 k
-    # wetting pull-up is pulsed for 1 ms every 100 ms (1 % duty) instead.
-    ("Pulsed input scan, switch open (0.35 mA x 1 %)", 4, 4),
-    ("MCU wake-ups for the scan (~2 mA x 1 %)", 1, 20),
+    # wetting pull-up is pulsed for 1 ms every 200 ms (0.5 % duty) instead.
+    ("Pulsed input scan, switch open (0.35 mA x 0.5 %)", 8, 2),
+    ("MCU wake-ups for the scan (~4 mA x 0.5 %)", 1, 20),
     ("VBAT sense divider, gated off", 1, 1),
     ("Reverse-polarity / TVS leakage", 1, 5),
 ]
@@ -165,32 +234,44 @@ SLEEP_ITEMS = [
 # --- Report ------------------------------------------------------------------
 
 
-def report(ambient_c: float) -> str:
+def report(build: str, location: str, enclosure: str) -> str:
     out: list[str] = []
+    sel = build_thermal(build, location, enclosure)
 
-    out.append(f"## Channel thermal at {ambient_c:.0f} C ambient\n")
-    out.append("| Class | Device | I cont (A) | Path R hot (mOhm) | Drop (mV) | "
-               "Switch loss (W) | Shunt loss (W) | Tj est (C) |")
-    out.append("|---|---|---:|---:|---:|---:|---:|---:|")
-    for c in CLASSES.values():
-        t = channel_thermal(c, c.i_cont_a, ambient_c)
+    out.append(f"## Cells at rating: {build}, {location}, {ENCLOSURES[enclosure].name}\n")
+    out.append(f"Ambient {LOCATIONS[location]:.0f} C, enclosure base "
+               f"{sel['t_base_c']:.0f} C ({sel['p_total_w']:.1f} W in the module).\n")
+    out.append("| Slot | Class | Device | I cont (A) | Path R hot (mOhm) | Drop (mV) | "
+               "Loss (W) | Tj est (C) |")
+    out.append("|---|---|---|---:|---:|---:|---:|---:|")
+    for n, (k, tj) in enumerate(zip(BUILDS[build], sel["tj_c"]), start=1):
+        c = CLASSES[k]
+        x = channel_loss(c, c.i_cont_a)
         out.append(
-            f"| {c.name} | {c.device} | {c.i_cont_a:.0f} | {c.r_path_mohm():.2f} | "
-            f"{t['drop_mv']:.0f} | {t['p_switches_w']:.2f} | {t['p_shunt_w']:.2f} | "
-            f"{t['tj_c']:.0f} |"
+            f"| OUT{n} | {c.name} | {c.device} | {c.i_cont_a:.0f} | {c.r_path_mohm():.2f} | "
+            f"{x['drop_mv']:.0f} | {x['p_total_w']:.2f} | {tj:.0f} |"
         )
 
-    build = ["L", "M", "S", "S"]
-    total_i = sum(CLASSES[k].i_cont_a for k in build)
-    total_p = sum(channel_thermal(CLASSES[k], CLASSES[k].i_cont_a, ambient_c)["p_total_w"]
-                  for k in build)
-    out.append(f"\nDefault build {''.join(build)}: {total_i:.0f} A continuous total, "
-               f"{total_p:.1f} W in the power stage with every channel at its rating.\n")
+    out.append("\n## Hottest cell by build, location and enclosure\n")
+    out.append(f"Pass = hottest junction <= {TJ_MAX_C - TJ_MARGIN_C} C "
+               f"({TJ_MARGIN_C} C below the {TJ_MAX_C} C limit).\n")
+    out.append("| Build | Location | Enclosure | Module loss (W) | Base (C) | "
+               "Hottest Tj (C) | Pass |")
+    out.append("|---|---|---|---:|---:|---:|---|")
+    for b in BUILDS:
+        for loc in LOCATIONS:
+            for enc in ENCLOSURES:
+                t = build_thermal(b, loc, enc)
+                out.append(
+                    f"| {b} | {loc} | {ENCLOSURES[enc].name} | {t['p_total_w']:.1f} | "
+                    f"{t['t_base_c']:.0f} | {t['tj_hottest_c']:.0f} | "
+                    f"{'yes' if t['ok'] else '**no**'} |"
+                )
 
-    out.append("## Copper width (IPC-2221, 20 C rise, upper bound)\n")
+    out.append("\n## Copper width (IPC-2221, 20 C rise, upper bound)\n")
     out.append("| Current (A) | 2 oz outer (mm) | 3 oz outer (mm) | 2 oz inner (mm) |")
     out.append("|---:|---:|---:|---:|")
-    for amps in (10, 20, 40, 80):
+    for amps in (10, 20, 40, 60, 80):
         out.append(
             f"| {amps} | {ipc2221_width_mm(amps, 20, 2, True):.1f} | "
             f"{ipc2221_width_mm(amps, 20, 3, True):.1f} | "
@@ -200,7 +281,7 @@ def report(ambient_c: float) -> str:
     out.append("\n## Harness voltage drop (20 C copper)\n")
     out.append("| Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |")
     out.append("|---|---:|---:|---:|---:|---:|")
-    for label, _cls, amps, awg, metres, rt in EXAMPLE_LOADS:
+    for label, amps, awg, metres, rt in EXAMPLE_LOADS:
         v = wire_drop_v(amps, awg, metres, rt)
         out.append(f"| {label} | {amps} | {awg} | {metres} | {v:.2f} | {100 * v / 13.5:.1f} |")
 
@@ -221,9 +302,11 @@ def report(ambient_c: float) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--ambient", type=float, default=85.0, help="ambient, C")
+    parser.add_argument("--build", choices=BUILDS, default="MMSS")
+    parser.add_argument("--location", choices=LOCATIONS, default="cab")
+    parser.add_argument("--enclosure", choices=ENCLOSURES, default="plate")
     args = parser.parse_args()
-    print(report(args.ambient))
+    print(report(args.build, args.location, args.enclosure))
 
 
 if __name__ == "__main__":

@@ -2,8 +2,10 @@
 
 All outputs are high-side solid-state switches: the module switches battery
 positive to the load and the load returns to chassis. Three channel classes
-cover the JK use cases; each is a *cell* that implements the
-[slot interface](02-architecture.md#slot-interface).
+cover the main outputs; each is a *cell* that implements the
+[slot interface](02-architecture.md#slot-interface). A fixed bank of four
+small AUX outputs drives relay and contactor coils
+([AUX bank](#aux-bank-coil-drivers)).
 
 Part numbers are candidates. Figures marked † are typical datasheet values
 recalled for sizing and **must be checked against the current datasheet**
@@ -14,7 +16,7 @@ before the BOM is frozen.
 | | **S — small** | **M — medium** | **L — large** |
 |---|---|---|---|
 | Continuous rating | 10 A | 20 A (25 A ≤ 60 °C ambient) | 40 A |
-| Typical loads | Pods, rock lights, rear floods, relay/solenoid coils | Light bars, paired pods | Compressor, large bar, fridge + radio feed |
+| Typical loads | Pods, rock lights, rear floods, fridge feed | Light bars, paired pods | Single-motor compressor, large bar, fridge + inverter feed (not fitted on the JK `MMSS` build) |
 | Switch | Infineon **BTS7004-1EPP** (PROFET+2 12 V, 4.4 mΩ†) | Infineon **BTS7002-1EPP** (PROFET+2 12 V, 2.6 mΩ†) | 4 × 60 V automotive N-MOSFET: 2 in parallel, back-to-back common-source |
 | Alternates | BTS7006-1EPP (6 mΩ†); TI TPS1HB08-Q1 | BTS50015-1TAD (1.5 mΩ†, TO-263-7) for a 25–30 A M+ cell | Infineon 2ED2410-EM dual-channel driver (natural fit for an `LL` variant) |
 | Driver | Integrated | Integrated | TI **TPS48111-Q1** smart high-side gate driver |
@@ -24,25 +26,55 @@ before the BOM is frozen.
 | Reverse battery | ReverseON (channel turns on to limit dissipation; load sees reverse voltage) | Same | Back-to-back FETs block; load sees nothing |
 | Temperature | Internal sensing; firmware estimate | Same | NTC beside the FETs |
 
-### Thermal check at 85 °C ambient
+### Thermal check
 
-From `python3 tools/budget.py` (assumed junction-to-ambient as mounted:
-S 25 K/W, M 20 K/W, L 30 K/W per FET; hot R<sub>DS(on)</sub> = 2× for PROFET,
-1.8× for discrete FETs at 1.2 mΩ each):
+Model (`python3 tools/budget.py`):
+T<sub>j</sub> = ambient + P<sub>module</sub> × R<sub>th,enclosure</sub>
++ P<sub>switch</sub> × R<sub>th,j-base</sub>, with every channel at its
+rating, AUX coils at their JK loads and 0.5 W of logic. Assumptions:
+junction-to-base S 15 K/W, M 12 K/W, L 20 K/W per FET; enclosure-to-ambient
+1.5 K/W (die-cast aluminium on vehicle metal), 2.5 K/W (printed shell on a
+6 mm aluminium base plate), 6 K/W (printed shell only); hot
+R<sub>DS(on)</sub> = 2× for PROFET, 1.8× for discrete FETs at 1.2 mΩ each.
 
-| Class | I cont (A) | Path R hot (mΩ) | Drop (mV) | Switch loss (W) | Shunt loss (W) | T<sub>j</sub> est (°C) |
-|---|---:|---:|---:|---:|---:|---:|
-| S | 10 | 8.80 | 88 | 0.88 | 0.00 | 107 |
-| M | 20 | 5.20 | 104 | 2.08 | 0.00 | 127 |
-| L | 40 | 2.16 | 96 | 3.46 | 0.40 | 111 |
+JK build — `MMSS` in the cab (65 °C), printed shell on an aluminium plate,
+6.4 W in the module, base plate at 81 °C:
 
-The M cell is the thermal limit: 127 °C at 85 °C ambient leaves ~23 °C to the
-150 °C limit, which is why M is rated 20 A and firmware derates it above
-65 °C board temperature. The default `LMSS` build dissipates 7.7 W with every
-channel at its rating; the power board is bonded to the enclosure floor with
-a gap pad so the aluminium is the heat sink.
+| Slot | Class | I cont (A) | Path R hot (mΩ) | Drop (mV) | Loss (W) | T<sub>j</sub> est (°C) |
+|---|---|---:|---:|---:|---:|---:|
+| OUT1 | M | 20 | 5.20 | 104 | 2.08 | 106 |
+| OUT2 | M | 20 | 5.20 | 104 | 2.08 | 106 |
+| OUT3 | S | 10 | 8.80 | 88 | 0.88 | 94 |
+| OUT4 | S | 10 | 8.80 | 88 | 0.88 | 94 |
 
-Thermal resistances are the weakest assumption in this table. They are
+Hottest cell for every build, location and enclosure (pass = ≤ 135 °C, i.e.
+15 °C below the 150 °C limit):
+
+| Build | Location | Enclosure | Module loss (W) | Base (°C) | Hottest T<sub>j</sub> (°C) | Pass |
+|---|---|---|---:|---:|---:|---|
+| MMSS | cab | Aluminium box | 6.4 | 75 | 100 | yes |
+| **MMSS** | **cab** | **Printed shell + Al plate** | **6.4** | **81** | **106** | **yes** |
+| MMSS | cab | Printed shell only | 6.4 | 104 | 128 | yes, but the shell sits above ASA's 100 °C HDT |
+| MMSS | engine bay | Aluminium box | 6.4 | 95 | 120 | yes |
+| MMSS | engine bay | Printed shell + Al plate | 6.4 | 101 | 126 | yes, with a PET-CF / PAHT-CF shell |
+| MMSS | engine bay | Printed shell only | 6.4 | 124 | 148 | **no** |
+| LMSS | cab | Aluminium box | 8.2 | 77 | 102 | yes |
+| LMSS | cab | Printed shell + Al plate | 8.2 | 85 | 110 | yes |
+| LMSS | cab | Printed shell only | 8.2 | 114 | 139 | **no** |
+| LMSS | engine bay | Aluminium box | 8.2 | 97 | 122 | yes |
+| LMSS | engine bay | Printed shell + Al plate | 8.2 | 105 | 130 | yes, with a PET-CF / PAHT-CF shell |
+| LMSS | engine bay | Printed shell only | 8.2 | 134 | 159 | **no** |
+
+Conclusions:
+
+- The M cell is the hottest part in every case, which is why M is rated
+  20 A and firmware derates it above 65 °C board temperature.
+- A printed enclosure needs the aluminium base plate: plastic alone traps
+  the heat (and the shell ends up above its own softening point).
+- The JK choice — cab, printed shell, aluminium plate — leaves ~30 °C of
+  margin.
+
+Thermal resistances are the weakest assumption in these tables. They are
 replaced with measured values in validation test TH-1.
 
 ## S and M cells (PROFET+2)
@@ -126,8 +158,32 @@ OUT ──┬── Schottky freewheel (cathode at OUT, anode at GND), 60 V, ≥
   the primary protection at configured ratings below that.
 - **Freewheel:** a motor or long-harness inductance at turn-off is clamped
   by the Schottky to ~−0.6 V instead of avalanching the FETs.
-- **Twin-motor compressors** can exceed 150 A at start and 60 A running.
-  Drive those through their own relay/contactor from an S channel.
+- **Twin-motor compressors** exceed the L rating. The ARB twin (CKMTA12) is
+  rated ~50 A under load and ships with its own relay, so it keeps that relay
+  and the module drives the coil from AUX1
+  ([12](12-compressor-and-winch.md#arb-twin-compressor-ckmta12)).
+
+## AUX bank (coil drivers)
+
+Four on/off outputs for relay and contactor coils, indicators and small
+accessories, fitted on every power-board variant.
+
+| | AUX |
+|---|---|
+| Device | 2 × Infineon **BTS7008-2EPA** (PROFET+2 12 V dual, per-channel R<sub>DS(on)</sub> ~8 mΩ†) — same family and firmware driver as the S/M cells. Alternate: TI TPS2HB16-Q1. |
+| Rating | 5 A continuous per channel (firmware default 2 A for coils) |
+| Current sense | One `IS` pin per device, channel selected by `AUX_DSEL`; read in turn every 1 ms |
+| Hardware trip | Internal current limit and thermal shutdown |
+| PWM | No — on/off only. Economised contactor coils must see steady DC. |
+| Inductive loads | The integrated output clamp absorbs relay-coil energy; economised coils suppress their own back-EMF; large plain solenoids get a freewheel diode at the coil |
+| Connector | J7 ([08](08-mechanical-and-wiring.md#j7--aux-outputs)) |
+
+JK allocation: AUX1 ARB compressor relay, AUX2 winch isolator contactor,
+AUX3 rocker indicator, AUX4 spare ([12](12-compressor-and-winch.md)).
+
+Because AUX1 feeds the ARB relay coil through ARB's pressure switch, its
+current sense doubles as a "compressor running" signal — see
+[run detection](12-compressor-and-winch.md#run-detection-without-a-pressure-sensor).
 
 ## Protection layers
 
@@ -139,7 +195,7 @@ OUT ──┬── Schottky freewheel (cathode at OUT, anode at GND), 60 V, ≥
 | 4 | Inrush blanking and soft-start | per configuration | No |
 | 5 | Retry with back-off, then latch | s | No |
 | 6 | Load shed: low battery, module current budget, board temperature | s | No |
-| 7 | Upstream fuse on the battery feed (100 A at the battery) | — | Yes — protects the feed cable only |
+| 7 | Upstream fuse on the battery feed (80 A at the battery for the JK `MMSS` build) | — | Yes — protects the feed cable only |
 
 **Wire-sizing rule:** size each output wire for the *hardware* trip level
 (layers 1–2), not the firmware fuse setting, because hardware is the layer

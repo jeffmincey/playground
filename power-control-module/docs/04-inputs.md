@@ -1,11 +1,12 @@
 # 04 — Inputs
 
-Four general inputs (`IN1`–`IN4`) plus a dedicated ignition/wake input
-(`IGN`). Every input is read by the ADC, so "active-high", "active-low" and
+Eight general inputs (`IN1`–`IN8`, raised from four by decision D-17 once
+the compressor, winch isolator and JK signals were added) plus a dedicated
+ignition/wake input (`IGN`). Every input is read by the ADC, so "active-high", "active-low" and
 "analog" are firmware modes over identical hardware — any input can be
 re-purposed by configuration, with no rework.
 
-## Input circuit (per channel, identical ×4)
+## Input circuit (per channel, identical ×8)
 
 ```
                      VBAT_PROT
@@ -35,15 +36,15 @@ re-purposed by configuration, with no rework.
   for 12 V-driven inputs.
 - **Sleep scanning:** a weak always-on pull-up cannot replace it in sleep,
   because the 57 kΩ divider and 100 kΩ pull-down load it below the
-  active-low threshold. Instead, in sleep the MCU wakes every 100 ms, turns
-  the 2.2 kΩ pull-up on for 1 ms and samples. Cost ≈ 4 µA per open switch
+  active-low threshold. Instead, in sleep the MCU wakes every 200 ms, turns
+  the 2.2 kΩ pull-up on for 1 ms and samples. Cost ≈ 2 µA per open switch
   plus ≈ 20 µA of MCU wake-ups ([budget](../tools/budget.py)); a switch left
-  *closed* with the module asleep costs ≈ 60 µA. Worst-case wake latency is
-  100 ms + debounce.
+  *closed* with the module asleep costs ≈ 30 µA. Worst-case wake latency is
+  200 ms + debounce.
 - **Pull-down:** switchable so a 12 V-driven input (trailer harness, factory
   switch) has a defined level when its source is open.
 - RC (~0.4 ms) removes RF; real debounce is in firmware.
-- Active-high inputs are caught by the same 100 ms sleep scan (a 12 V input
+- Active-high inputs are caught by the same 200 ms sleep scan (a 12 V input
   only reaches ~1.9–2.4 V at the divider, too marginal for a digital EXTI
   threshold); `IGN` has its own digital wake path. See
   [05-logic-power-can.md](05-logic-power-can.md#sleep-and-wake).
@@ -56,6 +57,7 @@ re-purposed by configuration, with no rework.
 | `ACTIVE_HIGH` | Pull-up off, pull-down on | V > 7.0 V (hysteresis to 5.0 V) | Trailer harness circuits, factory 12 V switches, ignition-switched feeds |
 | `ANALOG` | Both off (or pull-up on for resistive senders) | — reports voltage | 0.5–4.5 V pressure transducer (with module `+5V_SENS`), resistor-ladder multi-position switch |
 | `FREQUENCY` | As `ACTIVE_*` | — reports Hz and duty | Turn-signal decode, wheel-speed pulses (≤ 1 kHz) |
+| `DISABLED` | Both off | — | Unused input; skipped by the sleep scan |
 
 Thresholds, debounce (default 20 ms on, 50 ms off) and inversion are
 per-input configuration parameters.
@@ -64,9 +66,9 @@ per-input configuration parameters.
 
 A 5 V, 50 mA protected supply (short-to-ground and short-to-battery
 tolerant, e.g. a protected LDO or a high-side switch from the 5 V rail) on
-the signal connector powers a ratiometric pressure transducer. That lets the
-module run the compressor on measured tank pressure with its own cut-in and
-cut-out thresholds instead of a mechanical pressure switch.
+the signal connector powers a ratiometric sensor, e.g. a tank pressure
+transducer for a pressure read-out. (The ARB twin keeps its own pressure
+switch for cut-in/cut-out; see [12](12-compressor-and-winch.md).)
 
 ## Trailer harness as an input source
 
@@ -109,10 +111,18 @@ the TIPM with an add-a-fuse tap, fused at 2 A. `IGN` gates:
 
 | Input | Mode | Wired to | Used by |
 |---|---|---|---|
-| IN1 | `ACTIVE_LOW` | Dash toggle "BAR" | OUT2 light bar |
+| IN1 | `ACTIVE_LOW` | ARB rocker (rewired: one contact to ground) | AUX1 compressor enable |
 | IN2 | `ACTIVE_HIGH` | Trailer harness reverse circuit | OUT3 rear floods |
-| IN3 | `ACTIVE_LOW` | Dash toggle "AIR" | OUT1 compressor enable |
-| IN4 | `ANALOG` | Tank pressure transducer on `+5V_SENS` | OUT1 cut-in / cut-out |
+| IN3 | `ACTIVE_HIGH`, 4 V / 2 V | Winch-side contactor stud, via 1 A fuse + 10 kΩ | AUX2 feedback (winch live) |
+| IN4 | `ACTIVE_HIGH`, 4 V / 2 V | Winch contactor coil +, via 10 kΩ | AUX2 feedback (coil / override) |
+| IN5 | `ACTIVE_LOW` | Dash toggle "BAR" (physical fallback to the panel) | OUT1 light bar |
+| IN6 | `ACTIVE_LOW` | Dash toggle "PODS" | OUT2 pods |
+| IN7 | `ACTIVE_HIGH` | Spare — high-beam wire tap if CAN-IHS does not decode | OUT1 interlock |
+| IN8 | `DISABLED` | Spare | — |
 | IGN | fixed | TIPM ignition fuse tap | Sleep, interlocks |
+
+Winch wiring and the meaning of IN3/IN4 are in
+[12](12-compressor-and-winch.md#state-and-feedback); vehicle signals that
+replace wires are in [11](11-jeep-jk-integration.md).
 
 The matching configuration is [`config/jk-example.yaml`](../config/jk-example.yaml).

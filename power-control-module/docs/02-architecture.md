@@ -1,36 +1,47 @@
 # 02 — Architecture
 
-## System context
+## System context (JK build)
 
 ```mermaid
 flowchart LR
-    BAT["Battery +<br/>100 A fuse at battery"] -->|4 AWG| STUD
-    subgraph PCM["Power Control Module"]
+    BAT["Battery +<br/>80 A fuse at battery"] -->|"6 AWG,<br/>through firewall"| STUD
+    subgraph PCM["Power Control Module (in cab)"]
         STUD["VBAT stud M6"] --> PB
-        subgraph PB["Power board (variant)"]
-            S1["Slot 1<br/>L 40 A"]
-            S2["Slot 2<br/>M 20 A"]
-            S3["Slot 3<br/>S 10 A"]
-            S4["Slot 4<br/>S 10 A"]
+        subgraph PB["Power board, variant MMSS"]
+            S1["OUT1 · M 20 A"]
+            S2["OUT2 · M 20 A"]
+            S3["OUT3 · S 10 A"]
+            S4["OUT4 · S 10 A"]
+            AUX["AUX bank<br/>4 × 5 A coil drivers"]
         end
-        LB["Logic board (common)<br/>MCU, inputs, CAN, logic supply"]
-        LB <-->|"40-pin slot interface"| PB
+        LB["Logic board (common)<br/>MCU, 8 inputs, 3 × CAN, logic supply"]
+        LB <-->|"50-pin slot interface"| PB
     end
-    S1 --> COMP["Compressor"]
-    S2 --> BAR["Light bar"]
+    S1 --> BAR["Light bar"]
+    S2 --> PODS["Front pods"]
     S3 --> REAR["Rear floods"]
     S4 --> ROCK["Rock lights"]
-    SW["Dash toggles<br/>pressure switch"] --> LB
-    TRL["Trailer harness<br/>reverse / tail"] --> LB
-    IGN["Ignition fuse tap"] --> LB
-    LB <-->|"CAN 1: accessory bus<br/>500 kbit/s, TX+RX"| KEY["CAN keypad / display /<br/>other modules"]
-    LB -.->|"CAN 2: vehicle bus<br/>listen-only"| OBD["Vehicle CAN<br/>(OBD-II pins 6/14)"]
+    AUX -->|"coil"| ARBR["ARB relay +<br/>pressure switch"]
+    ARBR --> COMP["ARB twin<br/>compressor"]
+    AUX -->|"coil"| WCON["Winch isolator<br/>contactor"]
+    WCON --> WINCH["Winch"]
+    SW["ARB rocker, toggles,<br/>winch sense"] --> LB
+    TRL["Trailer harness<br/>reverse"] --> LB
+    IGN["Ignition<br/>TIPM fuse tap"] --> LB
+    LB <-->|"CAN1 accessory, 500 k"| PANEL["Switch panel /<br/>other modules"]
+    LB -.->|"CAN2, DLC, 500 k<br/>listen / OBD polling"| DLC["OBD-II port"]
+    LB -.->|"CAN3, 125 k<br/>listen-only"| IHS["JK CAN-IHS"]
 ```
 
 Load returns go to chassis ground near each load; they do **not** come back
-through the module. The module ground stud carries only logic current and
-the L-channel freewheel current, which keeps the ground stud and its wire
-small and avoids a high-current ground path through the board.
+through the module. The module ground stud carries only logic current, AUX
+coil current and, on builds with an L cell, its freewheel current, which
+keeps the ground stud and its wire small and avoids a high-current ground
+path through the board.
+
+The ARB twin and the winch carry their own motor current through their own
+relay and contactor; the module switches only their coils
+([12](12-compressor-and-winch.md)).
 
 ## Modularity — three levels
 
@@ -39,8 +50,8 @@ design is modular at three levels, each solving a different problem:
 
 | Level | What varies | Mechanism |
 |---|---|---|
-| **Channel** | Current class of each output | Each output slot is built from one of three *channel cells* (S/M/L). A cell is a reusable KiCad hierarchical sheet + layout block that implements the common [slot interface](#slot-interface). |
-| **Board** | Mix of cells | Power board *variants* combine cells (e.g. `LMSS`, `MMMM`, `LLSS`). The logic board is the same for every variant; a per-slot ID resistor and a calibration EEPROM tell firmware what is fitted. |
+| **Channel** | Current class of each main output | Each output slot is built from one of three *channel cells* (S/M/L). A cell is a reusable KiCad hierarchical sheet + layout block that implements the common [slot interface](#slot-interface). |
+| **Board** | Mix of cells | Power board *variants* combine cells (e.g. `MMSS`, `LMSS`, `SSSS`). The logic board and the AUX bank are the same in every variant; a per-slot ID resistor and a calibration EEPROM tell firmware what is fitted. |
 | **System** | Number of outputs | Up to 4 modules share one CAN bus (2-bit address strap). A JK with 16 outputs is four modules, not a bigger board. |
 
 ### Why a two-board stack instead of one board
@@ -48,24 +59,28 @@ design is modular at three levels, each solving a different problem:
 | Option | For | Against |
 |---|---|---|
 | Single board, populate options | Cheapest, one assembly | Every variant is a re-layout of the whole board; logic and power copper weights conflict (heavy copper makes fine-pitch MCU routing harder and dearer). |
-| **Logic + power stack (chosen)** | Logic board is designed and validated once; power board is heavy copper with a simple layout; the power board bolts flat to the enclosure floor for heat sinking. | Board-to-board connector is a vibration item (mitigated with locking header + standoffs); two fab orders. |
+| **Logic + power stack (chosen)** | Logic board is designed and validated once; power board is heavy copper with a simple layout; the power board bolts flat to the aluminium base plate for heat sinking. | Board-to-board connector is a vibration item (mitigated with locking header + standoffs); two fab orders. |
 | Plug-in card per channel | Field-swappable channels | 40 A through a card edge or board-to-board connector is the weakest point in the system; four extra connectors per unit. Revisit only if field swapping becomes a requirement. |
 
 ### Power board variants
 
-Naming is the slot classes in order. Only the default is laid out for rev A.
+Naming is the slot classes in order. Every variant also carries the AUX bank.
 
 | Variant | Slots | Continuous total | Use |
 |---|---|---|---|
-| **`LMSS`** (default) | 40 + 20 + 10 + 10 | 80 A | Compressor, light bar, two light groups |
-| `MMMM` | 4 × 20 | 80 A | Lighting-only build |
-| `MMSS` | 20 + 20 + 10 + 10 | 60 A | Lighting with a smaller feed (6 AWG) |
-| `SSSS` | 4 × 10 | 40 A | Rock lights, coils, accessories; second module on the bus |
+| **`MMSS`** (JK default, laid out for rev A) | 20 + 20 + 10 + 10 | 60 A | Light bar, pods, rear floods, rock lights; compressor and winch on AUX |
+| `LMSS` | 40 + 20 + 10 + 10 | 80 A | A single-motor compressor powered directly from the L slot |
+| `MMMM` | 4 × 20 | 80 A | Heavier lighting |
+| `SSSS` | 4 × 10 | 40 A | Rock-light zones, accessories; second module on the bus |
 | `LLSS` | 40 + 40 + 10 + 10 | 100 A | Exceeds EL-8; needs a larger stud and feed. Not planned. |
 
 Total current is limited by the battery stud, feed cable and board copper
 (EL-8), not by the sum of the slots. Firmware enforces a module-level
 current budget as well as per-channel limits.
+
+The L cell stays in the cell library: the ARB twin draws more than it is
+rated for and keeps its own relay, but a single-motor compressor, a fridge
+and inverter feed, or another vehicle can use it.
 
 ## Slot interface
 
@@ -81,12 +96,33 @@ logic board. This contract is what makes the cells interchangeable.
 | `CHn_TEMP` | in | analog | NTC near the switch (L cell); S/M cells fit a resistor that reads "not fitted". |
 | `CHn_ID` | in | analog | Resistor to ground with a pull-up on the logic board: S = 10 k, M = 22 k, L = 47 k, empty = open. |
 
-Shared pins: `VBAT_SENSE` (gated divider), `+5V`, `+3V3`, `GND` (4 pins),
-`I2C_SCL`, `I2C_SDA` (calibration EEPROM on the power board), `OUT_SENSEn`
-(output voltage dividers, used for open-load and short-to-battery detection).
+AUX bank (two dual-channel PROFET+2 devices, fixed in every variant):
 
-4 channels × 6 + 12 shared = 36 signals → **2 × 20, 2.0 mm pitch** board-to-board
-header (4 spare pins), with two M3 standoffs carrying the mechanical load.
+| Signal | Dir | Notes |
+|---|---|---|
+| `AUX1_IN` … `AUX4_IN` | out | On/off; pulled down on the power board |
+| `AUX_DEN` | out | Diagnosis enable, shared by both devices |
+| `AUX_DSEL` | out | Selects which channel of each dual device drives its sense pin |
+| `AUX_IS_A`, `AUX_IS_B` | in | Current sense, one per dual device, multiplexed by `AUX_DSEL` |
+
+Header pin budget:
+
+| Group | Pins |
+|---|---:|
+| 4 slots × 6 | 24 |
+| `OUT_SENSE1–4` (output voltage dividers: open-load, short-to-battery) | 4 |
+| AUX bank | 8 |
+| `VBAT_LOGIC` × 2 (logic supply feed, PTC-protected on the power board) | 2 |
+| `+5V`, `+3V3` | 2 |
+| `GND` | 6 |
+| `VBAT_SENSE` (gated divider) | 1 |
+| `I2C_SCL`, `I2C_SDA` (power-board EEPROM) | 2 |
+| Spare | 1 |
+| **Total** | **50** |
+
+→ **2 × 25, 2.0 mm pitch** board-to-board header, with two M3 standoffs
+carrying the mechanical load. (The first revision listed a 2 × 20 header and
+omitted the logic-supply feed pins; corrected here.)
 
 ## Data flow inside the MCU
 
@@ -94,15 +130,17 @@ header (4 spare pins), with two M3 standoffs carrying the mechanical load.
 flowchart LR
     ADC["ADC DMA scan<br/>~10 kHz/ch"] --> PROT["Protection loop 1 kHz<br/>e-fuse, I²t, retry"]
     IN["Input conditioning<br/>debounce, decode"] --> RULES["Rule engine 100 Hz"]
-    CAN1["CAN 1 RX<br/>commands, virtual inputs"] --> ARB
-    CAN2["CAN 2 RX<br/>vehicle signals"] --> RULES
+    CAN1["CAN1 RX<br/>commands, virtual inputs"] --> ARB
+    CAN2["CAN2 DLC<br/>listen / OBD polling"] --> VSM["Vehicle signal map"]
+    CAN3["CAN3 CAN-IHS<br/>listen-only"] --> VSM
+    VSM --> RULES
     RULES --> ARB["Arbitration<br/>per output"]
     ARB --> PROT
     PROT --> DRV["Output drivers<br/>EN / PWM timers"]
-    PROT --> TLM["Telemetry 10 Hz<br/>CAN 1 TX"]
+    PROT --> TLM["Telemetry 10 Hz<br/>CAN1 TX"]
 ```
 
-Arbitration order per output, highest first:
+Arbitration order per output (main and AUX), highest first:
 
 1. **Protection** — a tripped or latched channel stays off whatever is asking.
 2. **Load shed** — battery-voltage and module-budget rules.
@@ -111,5 +149,9 @@ Arbitration order per output, highest first:
    [06-can-protocol.md](06-can-protocol.md#timeouts-and-failsafe)).
 5. **Rules** — the autonomous configuration.
 6. **Default** — OFF.
+
+The winch override switch sits outside this list on purpose: it powers the
+contactor coil directly, so it works even when the module does not
+([12](12-compressor-and-winch.md#wiring-recommended-option)).
 
 See [07-firmware.md](07-firmware.md) for the loops and state machines.

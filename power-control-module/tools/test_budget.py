@@ -1,19 +1,49 @@
 """Sanity checks that keep the design margins in budget.py from drifting."""
 
-from budget import CLASSES, channel_thermal, ipc2221_width_mm, wire_drop_v
+from budget import (
+    CLASSES,
+    SLEEP_ITEMS,
+    TJ_MAX_C,
+    TJ_MARGIN_C,
+    build_thermal,
+    ipc2221_width_mm,
+    wire_drop_v,
+)
 
-MAX_TJ_C = 150  # PROFET+2 and automotive MOSFET absolute junction limit
+SLEEP_LIMIT_UA = 250  # requirement EL-7
 
 
-def test_every_class_stays_below_tj_max_at_85c():
-    for c in CLASSES.values():
-        t = channel_thermal(c, c.i_cont_a, ambient_c=85)
-        assert t["tj_c"] < MAX_TJ_C - 15, c.name  # keep 15 C of margin
+def test_jk_default_has_margin():
+    # D-12 / D-13: MMSS in the cab, printed shell on an aluminium base plate.
+    t = build_thermal("MMSS", "cab", "plate")
+    assert t["ok"], t["tj_hottest_c"]
+
+
+def test_original_engine_bay_build_still_has_margin_in_aluminium():
+    t = build_thermal("LMSS", "engine_bay", "alu")
+    assert t["ok"], t["tj_hottest_c"]
+
+
+def test_printed_only_enclosure_is_rejected_for_the_engine_bay():
+    # Documents why the engine-bay option needs metal to sink the heat.
+    t = build_thermal("MMSS", "engine_bay", "printed")
+    assert t["tj_hottest_c"] > TJ_MAX_C - TJ_MARGIN_C
+
+
+def test_base_plate_beats_printed_only():
+    for location in ("cab", "engine_bay"):
+        plate = build_thermal("MMSS", location, "plate")["tj_hottest_c"]
+        printed = build_thermal("MMSS", location, "printed")["tj_hottest_c"]
+        assert plate < printed
 
 
 def test_hardware_trip_is_well_above_rating():
     for c in CLASSES.values():
         assert c.i_trip_a >= 3 * c.i_cont_a, c.name
+
+
+def test_sleep_budget_meets_requirement():
+    assert sum(qty * ua for _item, qty, ua in SLEEP_ITEMS) <= SLEEP_LIMIT_UA
 
 
 def test_trace_width_grows_with_current_and_shrinks_with_copper():

@@ -13,13 +13,14 @@ firmware/
 │   ├── io/             # input conditioning and decode
 │   ├── rules/          # rule engine and arbitration        (100 Hz)
 │   ├── canproto/       # Command/Status/... per pcm.dbc, config access
-│   ├── vehicle/        # vehicle signal map, FDCAN2 filters
+│   ├── vehicle/        # vehicle signal map, FDCAN2/3 filters, OBD-II polling client
 │   └── config/         # A/B flash storage, defaults, CRC
 ├── drivers/
 │   ├── cell_profet/    # S/M cells: EN, DEN, IS scaling, calibration
 │   ├── cell_l/         # L cell: TPS48111-Q1 control, NTC
+│   ├── aux_bank/       # BTS7008-2EPA pair: IN, DEN, DSEL-multiplexed sense
 │   ├── adc/            # DMA scan, oversampling
-│   └── can/            # FDCAN1/2 setup, bus-monitoring mode on FDCAN2
+│   └── can/            # FDCAN1-3 setup, bus-monitoring mode on FDCAN2/3
 ├── board/              # pin map, clocks, slot ID read
 ├── test/               # host-run unit tests for protection/ and rules/
 └── tools/              # host-side config compiler (YAML → parameters), CAN log decoding

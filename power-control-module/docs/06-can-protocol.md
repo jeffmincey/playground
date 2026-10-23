@@ -1,9 +1,15 @@
 # 06 — CAN protocol (accessory bus)
 
-Protocol version 0.1. The machine-readable definition is
+Protocol version 0.2. The machine-readable definition is
 [`can/pcm.dbc`](../can/pcm.dbc) (validated with `cantools`, strict mode);
 this page explains intent. If the two disagree, the DBC wins and this page
 is a bug.
+
+Changes from 0.1: AUX outputs (`Command` byte 7, `Status` bits 56–59, new
+`Aux` frame), eight inputs (`Status` byte 1, new `Inputs2` frame), vehicle
+signal telemetry (`VehicleA`/`VehicleB`), a `Health` frame, `Status` flags
+regrouped, and fault codes 11–12. Nothing implements 0.1, so there is no
+compatibility mode.
 
 ## Bus parameters
 
@@ -15,6 +21,7 @@ is a bug.
 | Byte order | Little-endian (Intel) for all multi-byte signals |
 | Base ID | `0x6A0` default, configurable (param `0x0101`) |
 | Module ID | `base + 0x10 × address`, address 0–3 from the strap |
+| Bus load | 83 periodic frames/s per module ≈ 2.2 % of 500 kbit/s (~135 bits per frame); 4 modules ≈ 9 % |
 
 **ID choice:** `0x6A0–0x6DF` sits in the CANopen SDO-request range for node
 IDs 0x20–0x5F. CANopen keypads typically default to low node IDs (e.g.
@@ -25,14 +32,20 @@ range, move the base ID.
 
 | ID | Name | Dir | Period | Content |
 |---|---|---|---|---|
-| `0x6A0` | `Command` | host → PCM | 100 ms while controlling | Output requests, duty, fault reset, virtual inputs, alive counter |
-| `0x6A1` | `Status` | PCM → host | 100 ms + on change (≥ 10 ms apart) | Output state and source, inputs, IGN, VBAT, board temp, flags, module current |
+| `0x6A0` | `Command` | host → PCM | 100 ms while controlling | Output and AUX requests, duty, fault reset, virtual inputs, alive counter |
+| `0x6A1` | `Status` | PCM → host | 100 ms + on change (≥ 10 ms apart) | Output state and source, 8 inputs, IGN, VBAT, board temp, flags, module current, AUX on/off |
 | `0x6A2` | `Currents` | PCM → host | 100 ms | 4 × output current, 0.01 A/bit |
 | `0x6A3` | `Diag` | PCM → host | 1 s + on change | 4 × fault code, 4 × channel temperature |
-| `0x6A4` | `Inputs` | PCM → host | 100 ms | 4 × input pin voltage, 1 mV/bit |
+| `0x6A4` | `Inputs` | PCM → host | 100 ms | IN1–IN4 pin voltage, 1 mV/bit |
 | `0x6A5` | `Info` | PCM → host | 1 s | Slot classes, address, protocol/firmware/hardware version, config CRC |
 | `0x6A6` | `ConfigReq` | host → PCM | on demand | Read/write/commit a configuration parameter |
 | `0x6A7` | `ConfigResp` | PCM → host | reply | Status + value |
+| `0x6A8` | `Aux` | PCM → host | 100 ms | AUX current (0.02 A/bit), fault, state, source |
+| `0x6A9` | `VehicleA` | PCM → host | 100 ms | Vehicle signals VS1–VS4 (int16, configured units) |
+| `0x6AA` | `VehicleB` | PCM → host | 100 ms | Vehicle signals VS5–VS8 |
+| `0x6AB` | `Inputs2` | PCM → host | 100 ms | IN5–IN8 pin voltage, 1 mV/bit |
+| `0x6AC` | `Health` | PCM → host | 1 s | Vehicle-bus activity, OBD polling state, CAN1 error counters, reset reason, uptime |
+| `0x6AD` | — | — | — | Reserved |
 | `0x6AE` | `BootReq` | host → PCM | on demand | Reserved for the CAN bootloader |
 | `0x6AF` | `BootResp` | PCM → host | reply | Reserved for the CAN bootloader |
 
@@ -44,34 +57,74 @@ range, move the base ID.
 | 8–11 | `OUT1_FaultReset` … `OUT4_FaultReset` | Rising edge clears a latched fault |
 | 12–15 | `Cmd_AliveCounter` | +1 per frame, wraps at 15 |
 | 16–47 | `OUT1_Duty` … `OUT4_Duty` (8 bits each) | 0.5 %/bit, 200 = 100 %; 255 = configured default |
-| 48–55 | `VIN1` … `VIN8` | Virtual inputs consumed by the rule engine |
-| 56–63 | — | Reserved, send 0 |
+| 48–55 | `VIN1` … `VIN8` | Virtual inputs consumed by the rule engine (panel buttons) |
+| 56–63 | `AUX1_Req` … `AUX4_Req` (2 bits each) | As `OUTn_Req`; AUX outputs are on/off only |
 
 Example: OUT1 ON at 50 %, OUT2 released, OUT3 OFF, OUT4 ON at 25 % with a
-fault reset, counter 7, VIN3 set → `92 78 C8 00 00 64 04 00`.
+fault reset, counter 7, VIN3 set, AUX1 ON, AUX2 OFF, AUX3–4 released →
+`92 78 64 00 00 32 04 06` (checked with `cantools`; the example in protocol
+0.1 had the duty bytes wrong).
 
 `OUT_Req = ON` with a duty below 100 % on an L cell is treated as 100 % —
 the L cell does not PWM (see [03](03-output-channels.md#class-summary)).
+
+A CAN request cannot bypass an interlock written into a rule's `force_off`
+(e.g. compressor with the engine off, winch while driving): `force_off` sits
+in the protection layer of arbitration, above CAN.
 
 ### `Status` (`0x6A1`)
 
 | Bits | Signal | Notes |
 |---|---|---|
 | 0–7 | `OUTn_State` (2 bits each) | 0 OFF, 1 ON, 2 PWM, 3 FAULT |
-| 8–11 | `INn_Active` | After mode, threshold, inversion and debounce |
-| 12 | `IGN_Active` | |
-| 13 | `SleepPending` | Module will sleep when the sleep timer expires |
-| 14 | `HostPresent` | A `Command` with a changing counter arrived within the timeout |
-| 15 | `ConfigDirty` | RAM config differs from flash |
+| 8–15 | `IN1_Active` … `IN8_Active` | After mode, threshold, inversion and debounce |
 | 16–23 | `VBAT` | 0.1 V/bit |
 | 24–31 | `BoardTemp` | 1 °C/bit, offset −40 |
 | 32–39 | `OUTn_Source` (2 bits each) | Who owns the output: 0 DEFAULT, 1 RULE, 2 CAN, 3 OVERRIDE |
-| 40–44 | Flags | `LoadShedActive`, `ModuleBudgetLimit`, `ThermalDerating`, `VehicleBusActive`, `VehicleSignalStale` |
-| 48–55 | `ModuleCurrent` | 0.5 A/bit |
-| 56–59 | `Sts_AliveCounter` | |
+| 40 | `IGN_Active` | |
+| 41 | `SleepPending` | Module will sleep when the sleep timer expires |
+| 42 | `HostPresent` | A `Command` with a changing counter arrived within the timeout |
+| 43 | `ConfigDirty` | RAM config differs from flash |
+| 44–47 | Flags | `LoadShedActive`, `ModuleBudgetLimit`, `ThermalDerating`, `VehicleSignalStale` |
+| 48–55 | `ModuleCurrent` | 0.5 A/bit, main + AUX |
+| 56–59 | `AUX1_On` … `AUX4_On` | |
+| 60–63 | `Sts_AliveCounter` | |
 
 `OUTn_Source` makes arbitration observable: a display can show *why* an
 output is on (a rule, the host, or a local override switch).
+
+### `Aux` (`0x6A8`)
+
+| Bits | Signal | Notes |
+|---|---|---|
+| 0–31 | `AUX1_Current` … `AUX4_Current` (8 bits each) | 0.02 A/bit, 0–5.1 A |
+| 32–47 | `AUX1_Fault` … `AUX4_Fault` (4 bits each) | Fault codes 0–15 |
+| 48–55 | `AUX1_State` … `AUX4_State` | As `OUTn_State` (PWM unused) |
+| 56–63 | `AUX1_Source` … `AUX4_Source` | As `OUTn_Source` |
+
+With the JK allocation, `AUX1_Current` above the relay-coil threshold means
+the ARB compressor is running ([12](12-compressor-and-winch.md#run-detection-without-a-pressure-sensor)).
+
+### `VehicleA` / `VehicleB` (`0x6A9`, `0x6AA`)
+
+Eight signed 16-bit values, `VS1`–`VS8`, in the units set by each signal's
+`scale` in the configuration (e.g. speed in km/h, RPM in rpm, lamp bits as
+0/1). `-32768` means stale or not configured. Sent only when at least one
+vehicle signal is configured. These frames are how a captured signal is
+verified before a rule uses it ([11](11-jeep-jk-integration.md#sniffing-procedure)).
+
+### `Health` (`0x6AC`)
+
+| Bits | Signal | Notes |
+|---|---|---|
+| 0 | `Can2Active` | Frames seen on the OBD port in the last second |
+| 1 | `Can3Active` | Frames seen on CAN-IHS in the last second |
+| 2 | `Can2TxEnabled` | OBD `TXD` jumper fitted and polling enabled in configuration |
+| 3 | `ObdPollingActive` | Requests being sent |
+| 4 | `OtherTesterSeen` | Another tester is on the OBD port; polling paused |
+| 8–23 | `Can1Tec`, `Can1Rec` | CAN1 transmit/receive error counters |
+| 24–31 | `ResetReason` | 0 power-on, 1 brown-out, 2 watchdog, 3 software, 4 pin, 5 firmware update |
+| 32–55 | `UptimeS` | Seconds since reset |
 
 ## Timeouts and failsafe
 
@@ -85,15 +138,16 @@ whose CAN driver keeps retransmitting a stale buffer.
 | per-output `on_host_loss` | `HOLD` | `HOLD`: keep the last CAN request for `hold_s`, then `RELEASE`. `RELEASE`: rules take over now. `OFF`: force off. |
 | per-output `hold_s` | 10 | Used by `HOLD` |
 
-Recommended: `OFF` for the compressor, `HOLD` for lights (a keypad reboot
-on the trail should not black out the light bar), `RELEASE` for outputs that
-have good autonomous rules.
+Recommended: `HOLD` for lights (a panel reboot on the trail should not
+black out the light bar), `HOLD` for 30 min on the winch isolator (never open
+it mid-pull), `RELEASE` for outputs with good autonomous rules. The
+compressor is driven by its local rocker, so host loss does not affect it.
 
 With `IGN` off, host loss is expected and is not logged as a fault.
 
 ## Fault codes
 
-Used in `Diag.OUTn_Fault`.
+Used in `Diag.OUTn_Fault` and `Aux.AUXn_Fault`.
 
 | Code | Name | Latching | Cleared by |
 |---|---|---|---|
@@ -108,6 +162,8 @@ Used in `Diag.OUTn_Fault`.
 | 8 | `UNDERVOLTAGE` | No | VBAT recovery |
 | 9 | `SLOT_MISMATCH` | Yes | Slot class differs from configuration; fix config or hardware |
 | 10 | `RETRY_WAIT` | No | Retry timer |
+| 11 | `RUN_LIMIT` | Yes | Load ran continuously longer than `max_load_on_s` (e.g. compressor leak); cleared by re-toggling the enabling input or `FaultReset` |
+| 12 | `FEEDBACK_MISMATCH` | No (reported while true) | The feedback input disagrees with the commanded state (e.g. contactor failed to close, or welded) |
 
 ## Configuration access
 
@@ -129,10 +185,12 @@ Parameter groups:
 | Group | Range | Content |
 |---|---|---|
 | `0x01` | `0x0100–0x01FF` | Module: base ID, bitrate, termination, sleep timer, module current budget, host timeout |
-| `0x10–0x13` | per output | Rating, I²t time constant, inrush blanking, soft-start, PWM frequency/default duty, retries, back-off, `on_host_loss`, `hold_s`, load-shed threshold |
-| `0x20–0x23` | per input | Mode, thresholds, debounce, inversion, pull-up/down |
+| `0x10–0x13` | per main output | Rating, I²t time constant, inrush blanking, soft-start, PWM frequency/default duty, retries, back-off, `on_host_loss`, `hold_s`, load-shed threshold, feedback |
+| `0x14–0x17` | per AUX output | Rating, retries, `on_host_loss`, `hold_s`, `max_load_on_s`, feedback |
+| `0x20–0x27` | per input | Mode, thresholds, debounce, inversion, pull-up/down |
 | `0x30–0x3F` | rules | Rule slots (see [07](07-firmware.md#rule-engine)) |
-| `0x40–0x4F` | vehicle signals | Vehicle CAN signal map entries |
+| `0x40–0x4F` | vehicle signals | Signal map entries: bus, ID or OBD PID, bit position, scale, timeout |
+| `0x50` | OBD polling | Enable, PID list, rate (effective only with the `TXD` jumper fitted) |
 
 Bulk configuration (a whole rules file) goes over USB; CAN access is for
 tuning a value from a display or laptop in the field. The host-side tool

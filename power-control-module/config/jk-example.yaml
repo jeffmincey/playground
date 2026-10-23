@@ -1,69 +1,137 @@
-# Example configuration: Jeep JK, power board variant LMSS, module address 0.
+# Example configuration: Jeep JK, power board variant MMSS, module address 0,
+# mounted in the cab. Compressor (ARB twin) and winch isolator on AUX outputs.
 #
 # This file is the human-editable source. A host-side tool (planned, see
 # ../firmware/README.md) validates it and compiles it to the parameter writes
 # described in ../docs/06-can-protocol.md, or uploads it whole over USB.
-# Units: A, V, ms, s, %.
+# Units: A, V, ms, s, km/h, rpm. Rule grammar: ../docs/07-firmware.md.
+#
+# Expressions are evaluated left to right with no precedence, at most four
+# terms: "A OR B AND C" means (A OR B) AND C.
+#
+# Switch panel convention: light buttons are latching in the panel (the panel
+# owns the toggle state and its LED) and arrive as steady VIN levels; action
+# buttons (winch arm) are momentary.
 
 module:
   address: 0
-  variant: LMSS            # must match the fitted slot classes or the
+  variant: MMSS            # must match the fitted slot classes or the
                            # mismatched output stays off (SLOT_MISMATCH)
   can:
     bitrate: 500000
     base_id: 0x6A0
-    termination: true      # this module is one physical end of the bus
+    termination: true      # this module is one physical end of the accessory bus
     host_timeout_ms: 500
-  current_budget_a: 80
+  current_budget_a: 60
   sleep_after_s: 30
+  engine_running:
+    rpm_signal: VS1        # falls back to VBAT > 13.2 V for 5 s if VS1 is stale
+    rpm_threshold: 500
 
 inputs:
-  IN1: { name: bar_toggle,   mode: ACTIVE_LOW,  debounce_on_ms: 20, debounce_off_ms: 50 }
+  IN1: { name: arb_rocker, mode: ACTIVE_LOW }
   IN2: { name: trailer_reverse, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
          debounce_on_ms: 50, debounce_off_ms: 300 }   # longer: rejects
                                                        # trailer-detect pulses
-  IN3: { name: air_toggle,   mode: ACTIVE_LOW }
-  IN4: { name: tank_pressure, mode: ANALOG,
-         # 0.5-4.5 V ratiometric transducer, 0-200 psi, on +5V_SENS
-         scale: { v_min: 0.5, v_max: 4.5, min: 0, max: 200, unit: psi } }
+  # Winch sense lines come through an external 10 k resistor, which with the
+  # input's own divider reads ~0.77 x the line voltage. Low thresholds keep a
+  # winch-loaded battery sag (8 V and below) reading as "live".
+  IN3: { name: winch_live, mode: ACTIVE_HIGH, high_v: 4.0, low_v: 2.0 }   # winch-side stud
+  IN4: { name: winch_coil, mode: ACTIVE_HIGH, high_v: 4.0, low_v: 2.0 }   # contactor coil +
+  IN5: { name: bar_toggle, mode: ACTIVE_LOW }
+  IN6: { name: pods_toggle, mode: ACTIVE_LOW }
+  IN7: { name: spare_high_beam_tap, mode: ACTIVE_HIGH }   # only if CAN-IHS high beam fails
+  IN8: { name: spare, mode: DISABLED }
 
-vehicle_signals:           # empty until the JK CAN-C bus has been sniffed
-  # VS1: { name: vehicle_speed, can_id: TBD, start_bit: TBD, length: 16,
-  #        byte_order: big, factor: 0.01, offset: 0, unit: km/h, timeout_ms: 500 }
+# Vehicle signals. Entries with verified: false are skipped by the compiler
+# (treated as not configured) until a capture on this JK confirms them —
+# see ../docs/11-jeep-jk-integration.md#sniffing-procedure.
+vehicle_signals:
+  VS1:
+    name: engine_rpm
+    bus: CAN2              # OBD port; switch to CAN3 if CAN-IHS carries RPM
+    type: obd_pid
+    pid: 0x0C              # SAE J1979: (256*A + B) / 4
+    scale: rpm
+    timeout_ms: 1000
+    verified: false        # needs the CAN2 TXD jumper and obd_polling.enabled
+  VS2:
+    name: vehicle_speed
+    bus: CAN2
+    type: obd_pid
+    pid: 0x0D              # SAE J1979: A km/h
+    scale: km/h
+    timeout_ms: 1000
+    verified: false
+  VS3:
+    name: high_beam
+    bus: CAN3              # CAN-IHS, 125 kbit/s, receive-only
+    type: broadcast
+    can_id: 0x208          # community report; may be 0x308 -- confirm
+    start_bit: 5           # byte 0 bit 5
+    length: 1
+    byte_order: little
+    timeout_ms: 1000
+    verified: false
+  VS4:
+    name: low_beam
+    bus: CAN3
+    type: broadcast
+    can_id: 0x208
+    start_bit: 4
+    length: 1
+    byte_order: little
+    timeout_ms: 1000
+    verified: false
+  VS5:
+    name: parking_lamps
+    bus: CAN3
+    type: broadcast
+    can_id: 0x208
+    start_bit: 3
+    length: 1
+    byte_order: little
+    timeout_ms: 1000
+    verified: false
+  # VS6: door_ajar  -- not yet identified; find it by sniffing
+  # VS7: gear / reverse (automatic only) -- not yet identified
+
+obd_polling:
+  enabled: false           # also requires the CAN2 TXD solder jumper
+  max_requests_per_s: 10
 
 outputs:
   OUT1:
-    name: compressor
-    class: L
-    rating_a: 40
-    i2t_tau_s: 10
-    inrush_ms: 300
-    retries: 1
-    on_host_loss: "OFF"   # quoted: bare OFF is a YAML boolean
-    shed_priority: 1       # 1 = shed first
-    shed_ign_off: true
-    rule:
-      behaviour: follow
-      # Run while the AIR toggle is on and the engine is running; hysteresis
-      # on tank pressure: cut in below 110 psi, cut out above 150 psi.
-      condition: "IN3 is_on AND ENGINE_RUNNING is_on AND IN4 < hysteresis(110, 150)"
-      max_on_s: 900        # 15 min duty-cycle guard for the compressor motor
-      min_off_s: 600       # then cool for 10 min
-
-  OUT2:
     name: light_bar
     class: M
     rating_a: 20
     soft_start_ms: 200     # tames the bar driver's capacitive inrush
     pwm: false             # this bar's internal driver does not dim cleanly
-    on_host_loss: "HOLD"
+    on_host_loss: "HOLD"   # quoted throughout: a bare OFF would parse as a YAML boolean
     hold_s: 10
-    shed_priority: 3
+    shed_priority: 3       # 1 = shed first
     shed_ign_off: true
     rule:
       behaviour: follow
-      condition: "IN1 is_on AND IGN is_on"
-      override: [IN1]      # dash switch wins over a CAN keypad
+      condition: "VIN1 is_on OR IN5 is_on"
+      # Optional road-courtesy interlock: bar only while high beams are on.
+      # condition: "VIN1 is_on OR IN5 is_on AND VS3 is_on"
+      force_off: "IGN is_off"
+      override: [IN5]      # dash toggle wins over the panel
+
+  OUT2:
+    name: front_pods
+    class: M
+    rating_a: 15
+    on_host_loss: "HOLD"
+    hold_s: 10
+    shed_priority: 4
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      condition: "VIN2 is_on OR IN6 is_on"
+      force_off: "IGN is_off"
+      override: [IN6]
 
   OUT3:
     name: rear_floods
@@ -74,10 +142,9 @@ outputs:
     shed_ign_off: true
     rule:
       behaviour: follow
-      # On while reversing and for 60 s after; or while keypad button VIN1
-      # is latched on (the keypad host does the latching).
-      condition: "IN2 is_on OR VIN1 is_on"
+      condition: "IN2 is_on OR VIN3 is_on"   # reverse, or the panel button
       off_delay_s: 60
+      force_off: "VS2 > 15 for 3000"         # inactive while VS2 is unverified/stale
 
   OUT4:
     name: rock_lights
@@ -87,9 +154,60 @@ outputs:
     soft_start_ms: 500
     on_host_loss: "HOLD"
     hold_s: 10
-    shed_priority: 4
+    shed_priority: 1
     shed_ign_off: true     # camp use is fine until the battery hits 12.0 V
     rule:
-      behaviour: toggle
-      condition: "VIN2 is_on"   # each press flips the output
+      behaviour: follow
+      condition: "VIN4 is_on"
       max_on_s: 1800       # courtesy timer: off after 30 min
+      force_off: "VS2 > 15 for 3000"
+
+aux:
+  AUX1:
+    name: arb_compressor_relay   # coil fed through ARB's pressure switch
+    rating_a: 2
+    retries: 1
+    on_host_loss: "RELEASE"
+    rule:
+      behaviour: follow
+      condition: "IN1 is_on AND ENGINE_RUNNING is_on"
+      # Interlocks a CAN request cannot bypass: rocker off, engine off, or the
+      # charging system not keeping up (hysteresis stops it cycling as VBAT
+      # recovers once the compressor stops).
+      force_off: "IN1 is_off OR ENGINE_RUNNING is_off OR VBAT < hysteresis(12.0, 12.8) for 10000"
+      max_load_on_s: 1200                      # 20 min of continuous running -> RUN_LIMIT
+      load_on_threshold_a: 0.08                # coil current = compressor running
+
+  AUX2:
+    name: winch_isolator         # economised contactor coil, via diode D1
+    rating_a: 5
+    inrush_ms: 200               # 3.8 A pull-in for ~130 ms
+    retries: 0
+    on_host_loss: "HOLD"
+    hold_s: 1800                 # never open mid-pull because the panel rebooted
+    feedback:
+      sense: IN3                 # winch side live
+      command_sense: IN4         # coil energised by AUX2 or the override switch
+      close_timeout_ms: 500
+      open_timeout_ms: 2000
+    rule:
+      behaviour: toggle
+      condition: "VIN5 is_on for 2000"         # long press on the panel arms / disarms
+      force_off: "IGN is_off for 60000 OR VS2 > 10 for 5000"
+      max_on_s: 1800                           # auto-disarm after 30 min...
+      max_on_defer: "VBAT_SAG is_on"           # ...but not while the winch is pulling
+      max_on_warning_s: 60                     # panel blinks before a timer disarm
+
+  AUX3:
+    name: arb_rocker_indicator
+    rating_a: 0.5
+    rule:
+      behaviour: follow
+      condition: "AUX1_I > 0.08"               # steady while the compressor runs
+      flash:
+        - { when: "AUX1_FAULT is_on", pattern: fast }                          # RUN_LIMIT etc.
+        - { when: "IN1 is_on AND ENGINE_RUNNING is_off", pattern: slow }       # blocked
+
+  AUX4:
+    name: spare
+    rating_a: 5

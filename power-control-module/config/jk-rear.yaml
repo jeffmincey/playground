@@ -1,0 +1,132 @@
+# Example configuration: Jeep JK two-module system, REAR module.
+# Power board variant SSSS, module address 1, mounted in the rear cargo area.
+# Rear lighting, fridge feed and chase light; trailer-harness and third-brake-light
+# inputs are local here. Vehicle signals (speed, RPM) come from the front module
+# (jk-front.yaml) over the accessory bus as M0.<signal>.
+# See ../docs/13-multi-module-system.md and the rule grammar in ../docs/07-firmware.md.
+#
+# Expressions are evaluated left to right with no precedence, at most four
+# terms. A remote source that is stale (front module silent) reads false.
+
+module:
+  address: 1
+  variant: SSSS
+  can:
+    bitrate: 500000
+    base_id: 0x6A0           # module 1 frames are 0x6B0-0x6BF
+    termination: true        # rear end of the accessory bus
+    host_timeout_ms: 500
+  peers: [0]                 # read the front module's broadcast frames
+  current_budget_a: 40
+  sleep_after_s: 30
+  ign_source: local          # IGN wire in the front-rear trunk cable; M0.IGN is the fallback
+  feed_resistance_mohm: 10.3 # 5 m of 8 AWG: VBAT_EST = VBAT + module current x feed resistance
+  engine_running:
+    rpm_signal: M0.VS1       # the front module's RPM signal; VBAT fallback as usual
+    rpm_threshold: 500
+
+inputs:
+  IN1: { name: trailer_reverse, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
+         debounce_on_ms: 50, debounce_off_ms: 300 }   # rejects trailer-detect pulses
+  IN2: { name: third_brake_light, mode: ACTIVE_HIGH }  # spare-tire carrier lamp feed:
+                                                        # verify it is brake-only with a meter
+  IN3: { name: trailer_left_stop_turn, mode: FREQUENCY }   # combined stop/turn
+  IN4: { name: trailer_right_stop_turn, mode: FREQUENCY }
+  IN5: { name: tail_lamps, mode: ACTIVE_HIGH }
+  IN6: { name: camp_switch, mode: ACTIVE_LOW }             # switch at the tailgate
+  IN7: { name: spare, mode: DISABLED }
+  IN8: { name: spare, mode: DISABLED }
+
+vehicle_signals: {}          # none on this module: it has no vehicle CAN taps
+
+obd_polling:
+  enabled: false
+
+outputs:
+  OUT1:
+    name: rear_floods
+    class: S
+    rating_a: 10
+    on_host_loss: "RELEASE"
+    shed_priority: 2
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      condition: "IN1 is_on OR VIN1 is_on"     # reverse, or the panel button
+      off_delay_s: 60
+      force_off: "M0.VS2 > 15 for 3000"        # front module's vehicle speed
+
+  OUT2:
+    name: rear_rock_lights
+    class: S
+    rating_a: 10
+    pwm: { frequency_hz: 200, default_duty: 60 }
+    soft_start_ms: 500
+    on_host_loss: "HOLD"
+    hold_s: 10
+    shed_priority: 1
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      condition: "M0.OUT4 is_on OR VIN2 is_on" # follow the front rock lights
+      max_on_s: 1800
+      force_off: "M0.VS2 > 15 for 3000"
+
+  OUT3:
+    name: fridge
+    class: S
+    rating_a: 8
+    retries: 3
+    on_host_loss: "RELEASE"
+    shed_priority: 4             # last to go
+    shed_ign_off: true
+    shed_v: 12.2                 # protect the starting battery (uses VBAT_EST)
+    shed_delay_s: 120
+    restore_v: 12.8
+    rule:
+      behaviour: always          # on unless shed, forced off or tripped
+      force_off: "VIN5 is_on"    # panel button "fridge off"
+
+  OUT4:
+    name: camp_lights
+    class: S
+    rating_a: 10
+    pwm: { frequency_hz: 200, default_duty: 80 }
+    soft_start_ms: 300
+    on_host_loss: "HOLD"
+    hold_s: 10
+    shed_priority: 3
+    shed_ign_off: true
+    rule:
+      behaviour: follow
+      condition: "IN6 is_on OR VIN4 is_on"
+      max_on_s: 7200             # off after 2 h
+
+aux:
+  AUX1:
+    name: chase_light            # off-road convoy light, flashes on brake
+    rating_a: 2
+    on_host_loss: "RELEASE"
+    rule:
+      behaviour: follow
+      condition: "IN5 is_on OR IN2 is_on"      # with the tail lamps, and on brake
+      force_off: "IGN is_off"
+      flash:
+        - { when: "IN2 is_on", pattern: fast }
+
+  # If the ARB twin is mounted in the cargo area instead of under the hood,
+  # drive its relay from here; the rocker stays on the front module:
+  # AUX2:
+  #   name: arb_compressor_relay
+  #   rating_a: 2
+  #   retries: 1
+  #   rule:
+  #     behaviour: follow
+  #     condition: "M0.IN1 is_on AND ENGINE_RUNNING is_on"
+  #     force_off: "M0.IN1 is_off OR ENGINE_RUNNING is_off OR VBAT_EST < hysteresis(12.0, 12.8) for 10000"
+  #     max_load_on_s: 1200
+  #     load_on_threshold_a: 0.08
+
+  AUX2: { name: spare, rating_a: 5 }
+  AUX3: { name: spare, rating_a: 5 }
+  AUX4: { name: spare, rating_a: 5 }

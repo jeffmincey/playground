@@ -21,6 +21,11 @@ must be confirmed on the actual vehicle before a rule depends on it.
 
 ## Mounting location: cab
 
+The JK now uses two modules: the front module in the glovebox and a rear
+module in the cargo area ([13](13-multi-module-system.md)). The front module
+carries the vehicle taps, so the cab-versus-engine-bay reasoning below
+applies to it.
+
 Decision D-12. The question was engine bay or cab; with the compressor and
 winch switched by their own relay and contactor (see [12](12-compressor-and-winch.md)),
 the module only carries lighting current, which settles it:

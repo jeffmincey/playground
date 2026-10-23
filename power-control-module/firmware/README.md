@@ -28,5 +28,5 @@ firmware/
 
 `protection/` and `rules/` are written without hardware dependencies so they
 run as host unit tests — the trip-time table in the firmware doc and the
-behaviour of `config/jk-example.yaml` are checked on a PC before they run
+behaviour of `config/jk-front.yaml` and `config/jk-rear.yaml` are checked on a PC before they run
 on a vehicle.

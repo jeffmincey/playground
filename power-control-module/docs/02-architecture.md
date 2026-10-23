@@ -1,6 +1,9 @@
 # 02 — Architecture
 
-## System context (JK build)
+## System context (JK front module)
+
+The JK uses two modules — this one in the glovebox and a rear module in the
+cargo area; the two-module layout is in [13](13-multi-module-system.md).
 
 ```mermaid
 flowchart LR
@@ -52,7 +55,7 @@ design is modular at three levels, each solving a different problem:
 |---|---|---|
 | **Channel** | Current class of each main output | Each output slot is built from one of three *channel cells* (S/M/L). A cell is a reusable KiCad hierarchical sheet + layout block that implements the common [slot interface](#slot-interface). |
 | **Board** | Mix of cells | Power board *variants* combine cells (e.g. `MMSS`, `LMSS`, `SSSS`). The logic board and the AUX bank are the same in every variant; a per-slot ID resistor and a calibration EEPROM tell firmware what is fitted. |
-| **System** | Number of outputs | Up to 4 modules share one CAN bus (2-bit address strap). A JK with 16 outputs is four modules, not a bigger board. |
+| **System** | Number of outputs | Up to 4 modules share one CAN bus (2-bit address strap) and read each other's values as peers. The JK uses two (glovebox `MMSS` + rear `SSSS`, [13](13-multi-module-system.md)); 16 outputs would be four modules, not a bigger board. |
 
 ### Why a two-board stack instead of one board
 

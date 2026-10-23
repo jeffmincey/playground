@@ -109,20 +109,39 @@ the TIPM with an add-a-fuse tap, fused at 2 A. `IGN` gates:
 
 ## Example JK input allocation
 
+The JK uses two modules ([13](13-multi-module-system.md)); each wires the
+inputs that are physically near it.
+
+Front module (M0, glovebox):
+
 | Input | Mode | Wired to | Used by |
 |---|---|---|---|
 | IN1 | `ACTIVE_LOW` | ARB rocker (rewired: one contact to ground) | AUX1 compressor enable |
-| IN2 | `ACTIVE_HIGH` | Trailer harness reverse circuit | OUT3 rear floods |
+| IN2 | `ACTIVE_LOW` | Dash toggle "DITCH" | OUT3 ditch lights |
 | IN3 | `ACTIVE_HIGH`, 4 V / 2 V | Winch-side contactor stud, via 1 A fuse + 10 kΩ | AUX2 feedback (winch live) |
 | IN4 | `ACTIVE_HIGH`, 4 V / 2 V | Winch contactor coil +, via 10 kΩ | AUX2 feedback (coil / override) |
 | IN5 | `ACTIVE_LOW` | Dash toggle "BAR" (physical fallback to the panel) | OUT1 light bar |
-| IN6 | `ACTIVE_LOW` | Dash toggle "PODS" | OUT2 pods |
+| IN6 | `ACTIVE_LOW` | Dash toggle "PODS" | OUT2 bumper pods |
 | IN7 | `ACTIVE_HIGH` | Spare — high-beam wire tap if CAN-IHS does not decode | OUT1 interlock |
 | IN8 | `DISABLED` | Spare | — |
 | IGN | fixed | TIPM ignition fuse tap | Sleep, interlocks |
 
-Winch wiring and the meaning of IN3/IN4 are in
+Rear module (M1, cargo area):
+
+| Input | Mode | Wired to | Used by |
+|---|---|---|---|
+| IN1 | `ACTIVE_HIGH` | Trailer harness reverse circuit | OUT1 rear floods |
+| IN2 | `ACTIVE_HIGH` | Third-brake-light feed on the spare-tire carrier (verify brake-only) | AUX1 chase light, instant brake |
+| IN3 | `FREQUENCY` | Trailer harness left stop/turn | Turn / brake decode |
+| IN4 | `FREQUENCY` | Trailer harness right stop/turn | Turn / brake decode |
+| IN5 | `ACTIVE_HIGH` | Tail-lamp circuit | AUX1 chase light with the tail lamps |
+| IN6 | `ACTIVE_LOW` | Camp-light switch at the tailgate | OUT4 camp lights |
+| IN7, IN8 | `DISABLED` | Spare | — |
+| IGN | fixed | Same TIPM tap, carried in the front–rear trunk cable | Sleep, interlocks |
+
+Winch wiring and the meaning of the front IN3/IN4 are in
 [12](12-compressor-and-winch.md#state-and-feedback); vehicle signals that
 replace wires are in [11](11-jeep-jk-integration.md).
 
-The matching configuration is [`config/jk-example.yaml`](../config/jk-example.yaml).
+The matching configurations are [`config/jk-front.yaml`](../config/jk-front.yaml)
+and [`config/jk-rear.yaml`](../config/jk-rear.yaml).

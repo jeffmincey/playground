@@ -1,5 +1,8 @@
-# Example configuration: Jeep JK, power board variant MMSS, module address 0,
-# mounted in the cab. Compressor (ARB twin) and winch isolator on AUX outputs.
+# Example configuration: Jeep JK two-module system, FRONT module.
+# Power board variant MMSS, module address 0, mounted in the glovebox.
+# Front lighting, ARB twin compressor relay and winch isolator on this module;
+# it also taps the Jeep's buses and shares the vehicle signals with the rear
+# module (jk-rear.yaml) over the accessory bus. See ../docs/13-multi-module-system.md.
 #
 # This file is the human-editable source. A host-side tool (planned, see
 # ../firmware/README.md) validates it and compiles it to the parameter writes
@@ -20,8 +23,10 @@ module:
   can:
     bitrate: 500000
     base_id: 0x6A0
-    termination: true      # this module is one physical end of the accessory bus
+    termination: true      # bus ends: this module and the rear module; move this
+                           # termination to the panel when the panel is fitted at the dash end
     host_timeout_ms: 500
+  peers: [1]               # read the rear module's broadcast frames
   current_budget_a: 60
   sleep_after_s: 30
   engine_running:
@@ -30,9 +35,7 @@ module:
 
 inputs:
   IN1: { name: arb_rocker, mode: ACTIVE_LOW }
-  IN2: { name: trailer_reverse, mode: ACTIVE_HIGH, high_v: 7.0, low_v: 5.0,
-         debounce_on_ms: 50, debounce_off_ms: 300 }   # longer: rejects
-                                                       # trailer-detect pulses
+  IN2: { name: ditch_toggle, mode: ACTIVE_LOW }   # trailer reverse moved to the rear module
   # Winch sense lines come through an external 10 k resistor, which with the
   # input's own divider reads ~0.77 x the line voltage. Low thresholds keep a
   # winch-loaded battery sag (8 V and below) reading as "live".
@@ -134,20 +137,21 @@ outputs:
       override: [IN6]
 
   OUT3:
-    name: rear_floods
+    name: ditch_lights     # A-pillar pods
     class: S
     rating_a: 10
-    on_host_loss: "RELEASE"
+    on_host_loss: "HOLD"
+    hold_s: 10
     shed_priority: 2
     shed_ign_off: true
     rule:
       behaviour: follow
-      condition: "IN2 is_on OR VIN3 is_on"   # reverse, or the panel button
-      off_delay_s: 60
-      force_off: "VS2 > 15 for 3000"         # inactive while VS2 is unverified/stale
+      condition: "VIN3 is_on OR IN2 is_on"
+      force_off: "IGN is_off"
+      override: [IN2]
 
   OUT4:
-    name: rock_lights
+    name: front_rock_lights   # the rear module's rock lights follow this output
     class: S
     rating_a: 10
     pwm: { frequency_hz: 200, default_duty: 60 }

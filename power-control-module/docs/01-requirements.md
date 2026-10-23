@@ -42,6 +42,8 @@ jump-start only, see EL-4).
 | FN-14 | Outputs **shall** default OFF through reset, brown-out, watchdog and firmware update. |
 | FN-15 | A winch isolator controlled by the module **shall** remain operable with the module failed or unpowered, through a hardwired override that bypasses the module. |
 | FN-16 | Any output **shall** support optional feedback supervision (an input that must follow the real-world state of the load), reporting `FEEDBACK_MISMATCH`. |
+| FN-17 | Modules on one bus **shall** be able to use each other's broadcast values (inputs, outputs, currents, vehicle signals) in their rules, with a staleness timeout; no module is a master. |
+| FN-18 | A parked module **shall not** keep its peers awake: silent with all outputs off, low-rate telemetry otherwise, state changes sent so that a sleeping peer still receives them. |
 
 ## Electrical environment (12 V vehicle)
 

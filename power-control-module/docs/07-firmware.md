@@ -88,8 +88,8 @@ outputs default to 1 retry: a shorted coil wire is not a transient.
 |---|---|---|
 | Module current budget | 60 A for `MMSS`, 80 A for `LMSS` (EL-8) | Fold back PWM-capable outputs, then shed by priority |
 | Thermal derating | Estimated junction > 125 °C, per channel (board NTC + that channel's loss × its R<sub>th</sub>, calibrated in TH-1) | PWM-capable outputs fold back duty, others shed by priority, until the estimate is back under 120 °C; board > 115 °C → everything except `critical` outputs off. Working on estimated junction temperature rather than fixed board thresholds lets the same firmware run the cab and engine-bay builds. |
-| Low-voltage shed, IGN off | VBAT < 12.0 V for 60 s | Shed outputs with `shed_ign_off: true`; restore at IGN on |
-| Low-voltage shed, IGN on | VBAT < 11.5 V for 10 s | Shed by priority (charging system not keeping up) |
+| Low-voltage shed, IGN off | `VBAT_EST` < 12.0 V for 60 s (per-output `shed_v`, `shed_delay_s`, `restore_v` override) | Shed outputs with `shed_ign_off: true`; restore at IGN on or above `restore_v` |
+| Low-voltage shed, IGN on | `VBAT_EST` < 11.5 V for 10 s | Shed by priority (charging system not keeping up) |
 | Cranking / winching | VBAT 6–9 V | Hold outputs; no shed; protection thresholds unchanged |
 
 ## Rule engine
@@ -109,11 +109,15 @@ op         = is_on | is_off | > | < | rising | falling
 value      = number | hysteresis(low, high)   ("< hysteresis(110, 150)": true
              below 110, false above 150, unchanged in between)
 for <ms>   = the comparison must have held for <ms> (long press, persistence)
-source     = IN1..IN8, IGN, VIN1..VIN8, VS1..VS8 (vehicle signals), VBAT,
+source     = local | remote
+local      = IN1..IN8, IGN, VIN1..VIN8, VS1..VS8 (vehicle signals), VBAT,
              OUT1..OUT4 / AUX1..AUX4 (state), OUT1_I..AUX4_I (current, A),
              OUT1_FAULT..AUX4_FAULT (a fault is present),
-             ENGINE_RUNNING, VBAT_SAG (derived)
-behaviour  = follow | toggle | pulse
+             ENGINE_RUNNING, VBAT_SAG, VBAT_EST (derived)
+remote     = M<address>.<s>, where <s> is one of IN1..IN8, IGN, VS1..VS8,
+             VBAT, OUT1..OUT4, AUX1..AUX4, OUT1_I..AUX4_I  (a peer module's
+             broadcast values, see "Peer signals")
+behaviour  = follow | toggle | pulse | always
 modifiers  = on_delay, off_delay, min_off (cooldown),
              max_on (auto-off) + max_on_defer (expr) + max_on_warning_s,
              max_load_on_s + load_on_threshold_a (continuous-run limit),
@@ -125,6 +129,8 @@ modifiers  = on_delay, off_delay, min_off (cooldown),
 - `toggle`: each rising edge of the condition flips the output — momentary
   buttons and panel keys. With `for`, a toggle becomes a long-press action.
 - `pulse`: a rising edge turns the output on for `max_on`.
+- `always`: on whenever it is not forced off, shed or tripped — for feeds
+  such as a fridge. Needs no `condition`.
 - `max_on_defer` holds the `max_on` timer at its limit while the expression
   is true (the winch isolator does not time out while the winch is pulling);
   `max_on_warning_s` raises a warning flag for the panel before it expires.
@@ -144,12 +150,48 @@ modifiers  = on_delay, off_delay, min_off (cooldown),
   for 5 s when no RPM signal is configured or it is stale.
 - `VBAT_SAG` is derived: VBAT more than 1 V below its 10 s average — a large
   load such as a winch is pulling.
+- `VBAT_EST` is derived: VBAT + module current × `feed_resistance_mohm` — the
+  battery voltage seen through a long feed (the rear module). Without a feed
+  resistance configured it equals VBAT. Load shed uses it.
 - **Local override** inputs: an input can be marked `override` for an output,
   which places it above CAN commands in arbitration
   ([02](02-architecture.md#data-flow-inside-the-mcu)). This is how a physical
   dash switch keeps working when a CAN panel is present.
 
-Worked example: [`config/jk-example.yaml`](../config/jk-example.yaml).
+Worked examples: [`config/jk-front.yaml`](../config/jk-front.yaml) and
+[`config/jk-rear.yaml`](../config/jk-rear.yaml).
+
+## Peer signals
+
+Several modules share one accessory bus as peers; none is a master
+([13](13-multi-module-system.md#peer-signals)).
+
+- A module's `peers` list (configuration) names the addresses it reads.
+  FDCAN1 filters accept those peers' `Status`, `Currents`, `Aux`, `Inputs`,
+  `Inputs2` and `VehicleA/B` frames, and the values become remote sources
+  `M<address>.<s>`.
+- A remote value is stale after three of its sender's periods: 300 ms while
+  the sender has IGN on, 30 s while it is parked (from the sender's last
+  `IGN_Active`). Stale reads false, exactly like a stale vehicle signal, so
+  the same rule of thumb applies: use remote values in `force_off` or as
+  optional extras, not as the only way to turn something on.
+- `VIN` bits are not peer data: the panel addresses each module's `Command`
+  frame separately.
+- `ign_source: M<address>.IGN` lets a module without its own ignition wire
+  follow a peer's ignition (fallback only — a wired `IGN` also wakes the
+  module directly).
+
+## Parked mode
+
+With IGN off and no host `Command` for 30 s a module is *parked*: it sends
+`Status` every 10 s while any output is on and nothing once all outputs are
+off (then it sleeps). Every state change still goes out at once, as a burst
+of three `Status` frames 50 ms apart, so a sleeping peer woken by the first
+frame receives the others. A module woken by bus activity listens for up to
+100 ms and goes back to sleep unless a `Command` addresses it or a peer frame
+changes one of its rules. This keeps one module's overnight load (a fridge)
+from holding every other module awake
+([13](13-multi-module-system.md#sleep-and-wake-with-two-modules)).
 
 ## Feedback supervision
 

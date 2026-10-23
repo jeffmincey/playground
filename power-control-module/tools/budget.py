@@ -130,15 +130,21 @@ def channel_loss(c: ChannelClass, current_a: float) -> dict:
 # --- Builds, enclosures, locations -------------------------------------------
 
 BUILDS = {
-    "MMSS": ["M", "M", "S", "S"],  # JK default: lighting on the main outputs
+    "MMSS": ["M", "M", "S", "S"],  # JK front module: lighting on the main outputs
     "M+MSS": ["M+", "M", "S", "S"],  # engine-bay JK: low-loss part on the light-bar slot
     "LMSS": ["L", "M", "S", "S"],  # single-motor compressor on the L slot
+    "SSSS": ["S", "S", "S", "S"],  # JK rear module
 }
 
 # Per-slot load currents (A). None = every slot at its class rating.
 SCENARIOS = {
     "rated": None,
-    "jk_expected": [20, 12, 8, 4],  # light bar, front pods, rear floods, rock lights
+    # Single-module JK: light bar, front pods, rear floods, rock lights.
+    "jk_expected": [20, 12, 8, 4],
+    # Two-module JK, front: light bar, bumper pods, ditch lights, front rock lights.
+    "jk_front_expected": [20, 12, 6, 3],
+    # Two-module JK, rear: rear floods, rear rock lights, fridge, camp lights.
+    "jk_rear_expected": [8, 4, 5, 4],
 }
 
 # Steady AUX loads in the JK build (A): ARB relay coil, winch contactor hold
@@ -160,10 +166,23 @@ ENCLOSURES = {
     "printed": Enclosure("Printed shell only", 6.0),
 }
 
-# Design ambient for each mounting location (C). Engine-bay figures are
-# assumptions until the vehicle is logged: front of the bay while moving, and
-# a hot spot / slow crawl on a summer day.
-LOCATIONS = {"cab": 65.0, "engine_bay": 85.0, "engine_bay_hot": 105.0}
+@dataclass(frozen=True)
+class Location:
+    name: str
+    ambient_c: float  # design ambient (assumed until the vehicle is logged)
+    extra_rth_k_per_w: float = 0.0  # a second box around the module, e.g. a closed glovebox
+
+
+# Engine-bay figures: front of the bay while moving, and a hot spot / slow
+# crawl on a summer day. The closed glovebox adds the bin's own resistance to
+# the cab (assumed 4 K/W for a small closed plastic bin).
+LOCATIONS = {
+    "cab": Location("Cab, open air (under dash, or plate on dash metal)", 65.0),
+    "glovebox": Location("Inside a closed glovebox", 65.0, 4.0),
+    "rear_cargo": Location("Rear cargo area", 65.0),
+    "engine_bay": Location("Engine bay", 85.0),
+    "engine_bay_hot": Location("Engine-bay hot spot", 105.0),
+}
 
 
 def build_thermal(build: str, location: str, enclosure: str, scenario: str = "rated") -> dict:
@@ -178,7 +197,8 @@ def build_thermal(build: str, location: str, enclosure: str, scenario: str = "ra
     aux_losses = [channel_loss(aux, i) for i in AUX_LOADS_A]
     p_total = (sum(x["p_total_w"] for x in losses)
                + sum(x["p_total_w"] for x in aux_losses) + LOGIC_W)
-    t_base = LOCATIONS[location] + p_total * ENCLOSURES[enclosure].rth_k_per_w
+    loc = LOCATIONS[location]
+    t_base = loc.ambient_c + p_total * (ENCLOSURES[enclosure].rth_k_per_w + loc.extra_rth_k_per_w)
     tj = [t_base + x["p_per_switch_w"] * c.rth_j_base_k_per_w for c, x in zip(cells, losses)]
     return {
         "currents_a": currents,
@@ -231,16 +251,33 @@ def wire_drop_v(current_a: float, awg: int, length_m: float, round_trip: bool) -
     return current_a * AWG_MOHM_PER_M[awg] * metres / 1000
 
 
-# JK, module in the cab: (label, current A, AWG, one-way metres, return wired
+# Two-module JK: (module, label, current A, AWG, one-way metres, return wired
 # back to the module's ground point rather than to a chassis ground at the load)
 EXAMPLE_LOADS = [
-    ("Battery feed, engine bay to cab module", 60, 6, 2.5, False),
-    ("Light bar (OUT1, M)", 20, 10, 3.5, True),
-    ("Front pods (OUT2, M)", 12, 12, 3.0, True),
-    ("Rear floods (OUT3, S)", 10, 14, 3.0, True),
-    ("Rock lights (OUT4, S)", 6, 16, 3.0, True),
-    ("ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
-    ("Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
+    ("Front", "Battery feed to the glovebox module", 60, 6, 3.0, False),
+    ("Front", "Light bar (OUT1, M)", 20, 10, 3.5, True),
+    ("Front", "Bumper pods (OUT2, M)", 12, 12, 3.0, True),
+    ("Front", "Ditch lights (OUT3, S)", 6, 16, 2.0, True),
+    ("Front", "Front rock lights (OUT4, S)", 3, 16, 2.5, True),
+    ("Front", "ARB relay coil (AUX1)", 0.2, 18, 3.0, False),
+    ("Front", "Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
+    ("Rear", "Battery feed to the rear module, 8 AWG, at rating", 40, 8, 5.0, False),
+    ("Rear", "Same 8 AWG feed at the expected 21 A", 21, 8, 5.0, False),
+    ("Rear", "Battery feed to the rear module, 6 AWG, at rating", 40, 6, 5.0, False),
+    ("Rear", "Rear floods (OUT1, S)", 8, 14, 1.5, True),
+    ("Rear", "Rear rock lights (OUT2, S)", 4, 16, 2.0, True),
+    ("Rear", "Fridge (OUT3, S)", 5, 12, 1.5, True),
+    ("Rear", "Camp lights (OUT4, S)", 4, 16, 3.0, True),
+    ("Rear", "Chase light (AUX1)", 1.5, 18, 1.5, True),
+]
+
+# Two-module JK system cases: (case, build, location, scenario)
+SYSTEM_CASES = [
+    ("Front, closed glovebox", "MMSS", "glovebox", "rated"),
+    ("Front, closed glovebox", "MMSS", "glovebox", "jk_front_expected"),
+    ("Front, vented glovebox or plate on dash metal", "MMSS", "cab", "jk_front_expected"),
+    ("Rear, cargo area", "SSSS", "rear_cargo", "rated"),
+    ("Rear, cargo area", "SSSS", "rear_cargo", "jk_rear_expected"),
 ]
 
 
@@ -267,20 +304,33 @@ SLEEP_ITEMS = [
 # --- Report ------------------------------------------------------------------
 
 
-def matrix(scenario: str, builds: list[str]) -> list[str]:
+def cell(build: str, location: str, enclosure: str, scenario: str) -> str:
+    """'Tj / base' with the value that breaks a limit in bold."""
+    t = build_thermal(build, location, enclosure, scenario)
+    tj = f"{t['tj_hottest_c']:.0f}"
+    base = f"{t['t_base_c']:.0f}"
+    return f"{tj if t['tj_ok'] else f'**{tj}**'} / {base if t['base_ok'] else f'**{base}**'}"
+
+
+def matrix(scenario: str, builds: list[str],
+           locations: tuple[str, ...] = ("cab", "engine_bay", "engine_bay_hot")) -> list[str]:
     """Hottest junction / base temperature for each build, location and enclosure."""
     out = ["| Build | Location | " + " | ".join(e.name for e in ENCLOSURES.values()) + " |",
            "|---|---|" + "---:|" * len(ENCLOSURES)]
     for b in builds:
-        for loc in LOCATIONS:
-            cells = []
-            for enc in ENCLOSURES:
-                t = build_thermal(b, loc, enc, scenario)
-                tj = f"{t['tj_hottest_c']:.0f}"
-                base = f"{t['t_base_c']:.0f}"
-                cells.append(f"{tj if t['tj_ok'] else f'**{tj}**'} / "
-                             f"{base if t['base_ok'] else f'**{base}**'}")
+        for loc in locations:
+            cells = [cell(b, loc, enc, scenario) for enc in ENCLOSURES]
             out.append(f"| {b} | {loc} | " + " | ".join(cells) + " |")
+    return out
+
+
+def system_table() -> list[str]:
+    out = ["| Case | Build | Loads | " + " | ".join(e.name for e in ENCLOSURES.values()) + " |",
+           "|---|---|---|" + "---:|" * len(ENCLOSURES)]
+    for case, build, loc, scenario in SYSTEM_CASES:
+        loads = "rated" if SCENARIOS[scenario] is None else str(SCENARIOS[scenario])
+        cells = [cell(build, loc, enc, scenario) for enc in ENCLOSURES]
+        out.append(f"| {case} | {build} | {loads} | " + " | ".join(cells) + " |")
     return out
 
 
@@ -290,7 +340,7 @@ def report(build: str, location: str, enclosure: str, scenario: str) -> str:
 
     out.append(f"## Cells: {build}, {location}, {ENCLOSURES[enclosure].name}, "
                f"loads '{scenario}'\n")
-    out.append(f"Ambient {LOCATIONS[location]:.0f} C, enclosure base "
+    out.append(f"Ambient {LOCATIONS[location].ambient_c:.0f} C, enclosure base "
                f"{sel['t_base_c']:.0f} C ({sel['p_total_w']:.1f} W in the module).\n")
     out.append("| Slot | Class | Device | Load (A) | Path R hot (mOhm) | Drop (mV) | "
                "Loss (W) | Tj est (C) |")
@@ -312,6 +362,8 @@ def report(build: str, location: str, enclosure: str, scenario: str) -> str:
     out.append("\n## Hottest junction / enclosure base (C), expected JK loads "
                f"{SCENARIOS['jk_expected']} A\n")
     out.extend(matrix("jk_expected", ["MMSS", "M+MSS"]))
+    out.append("\n## Two-module JK system: hottest junction / enclosure base (C)\n")
+    out.extend(system_table())
 
     out.append("\n## Copper width (IPC-2221, 20 C rise, upper bound)\n")
     out.append("| Current (A) | 2 oz outer (mm) | 3 oz outer (mm) | 2 oz inner (mm) |")
@@ -324,11 +376,12 @@ def report(build: str, location: str, enclosure: str, scenario: str) -> str:
         )
 
     out.append("\n## Harness voltage drop (20 C copper)\n")
-    out.append("| Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |")
-    out.append("|---|---:|---:|---:|---:|---:|")
-    for label, amps, awg, metres, rt in EXAMPLE_LOADS:
+    out.append("| Module | Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |")
+    out.append("|---|---|---:|---:|---:|---:|---:|")
+    for module, label, amps, awg, metres, rt in EXAMPLE_LOADS:
         v = wire_drop_v(amps, awg, metres, rt)
-        out.append(f"| {label} | {amps} | {awg} | {metres} | {v:.2f} | {100 * v / 13.5:.1f} |")
+        out.append(f"| {module} | {label} | {amps} | {awg} | {metres} | {v:.2f} | "
+                   f"{100 * v / 13.5:.1f} |")
 
     out.append("\n## Sleep current (ignition off, all outputs off)\n")
     out.append("| Item | Qty | uA each | uA total |")

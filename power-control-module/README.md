@@ -19,7 +19,7 @@ not started. Part numbers are candidates until the BOM is frozen — see
 |---|---|
 | Main outputs | 4 high-side solid-state, each slot one of three classes |
 | Classes | **S** 10 A (PROFET+2, PWM) · **M** 20 A (PROFET+2, PWM) · **L** 40 A (discrete FETs + smart driver, reverse-blocking) |
-| JK build | `MMSS` — light bar, front pods, rear floods, rock lights; 60 A total |
+| JK system | Two modules on one bus: front (glovebox, `MMSS`) — light bar, bumper pods, ditch lights, front rock lights, compressor and winch on AUX; rear (cargo area, `SSSS`) — rear floods, rear rock lights, fridge, camp lights, chase light |
 | AUX outputs | 4 × 5 A coil drivers: ARB twin compressor relay, winch isolator contactor, indicator, spare |
 | Inputs | 8 × configurable (ground-switched, 12 V-switched, analog 0–16 V, frequency) + ignition/wake |
 | Protection | Hardware short-circuit trip per channel, firmware instantaneous + I²t e-fuse, retries, interlocks, load shed, thermal derating |
@@ -27,9 +27,9 @@ not started. Part numbers are candidates until the BOM is frozen — see
 | Autonomy | Per-output rules on inputs, ignition, panel buttons, vehicle signals (speed, RPM, high beam), battery voltage, load current; timers and interlocks |
 | Compressor | ARB twin keeps its relay and pressure switch; the module drives the coil, interlocks it to the engine, detects running from coil current, stops on a continuous-run limit |
 | Winch | Isolator contactor armed from the panel, auto-disarmed when driving or after a timeout, hardwired override that works without the module, welded-contact detection |
-| Mounting | In the cab (default): ASA shell printed on a Bambu X1C over a 6 mm aluminium heat-sink plate. Engine bay supported: PAHT-CF shell on the same plate, or a die-cast box |
-| Expansion | Up to 4 modules per bus (16 main outputs) |
-| Sleep current | ≤ 250 µA requirement, 193 µA estimated |
+| Mounting | Glovebox and rear cargo area: ASA shells printed on a Bambu X1C over 6 mm aluminium heat-sink plates. Engine bay supported: PAHT-CF shell on the same plate, or a die-cast box |
+| Expansion | Up to 4 modules per bus (16 main outputs); modules share values as peers, no master |
+| Sleep current | ≤ 250 µA requirement per module, 193 µA estimated; ≈ 0.5 mA for the parked two-module system with its panel |
 | Environment | Grade 1 (−40…+125 °C) parts; IP65 cab build, IP67 engine-bay build; ISO 16750 / ISO 7637 design targets |
 
 ## "Different flavors" of channel
@@ -59,6 +59,7 @@ fitted in each slot. Details in
 | [10-decisions-and-open-questions](docs/10-decisions-and-open-questions.md) | Decision log, open questions, roadmap |
 | [11-jeep-jk-integration](docs/11-jeep-jk-integration.md) | Mounting location, power, wired signals, CAN-IHS and OBD port, sniffing procedure |
 | [12-compressor-and-winch](docs/12-compressor-and-winch.md) | ARB twin integration, winch isolator options, wiring, rules |
+| [13-multi-module-system](docs/13-multi-module-system.md) | Glovebox + rear modules: allocation, power feeds, trunk cable, peer signals, sleep, thermal |
 
 ## Folder layout
 
@@ -66,14 +67,17 @@ fitted in each slot. Details in
 power-control-module/
 ├── README.md
 ├── docs/                  # design documents (above)
-├── can/pcm.dbc            # CAN database for the accessory-bus protocol
-├── config/jk-example.yaml # example autonomous configuration for a JK
+├── can/pcm.dbc            # CAN database for the accessory-bus protocol (module 0)
+├── can/pcm-jk.dbc         # generated: both JK modules
+├── config/jk-front.yaml   # JK front module (glovebox)
+├── config/jk-rear.yaml    # JK rear module (cargo area)
 ├── hardware/              # KiCad projects (planned structure + layout rules)
 ├── firmware/              # firmware (planned structure)
 ├── mechanical/            # enclosure and bracket CAD for the X1C (planned)
 └── tools/
     ├── budget.py          # thermal, copper, harness and sleep-current budgets
-    └── test_budget.py
+    ├── gen_dbc.py         # multi-module DBC from can/pcm.dbc
+    └── test_*.py
 ```
 
 ## Tools
@@ -85,14 +89,16 @@ cd power-control-module
 python3 tools/budget.py                    # JK build: MMSS, cab, printed shell + plate
 python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
 python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
-python3 -m pytest tools                    # margin checks (pytest from the repo's dev env)
+python3 tools/budget.py --build SSSS --location rear_cargo --scenario jk_rear_expected
+python3 tools/gen_dbc.py --modules 2 --out can/pcm-jk.dbc   # after editing can/pcm.dbc
+python3 -m pytest tools                    # margin and generator checks (pytest from the repo's dev env)
 ```
 
 Decode logged CAN traffic with the DBC, e.g. with
 [cantools](https://github.com/cantools/cantools):
 
 ```bash
-python3 -m cantools dump can/pcm.dbc
+python3 -m cantools dump can/pcm-jk.dbc
 ```
 
 ## Legal note

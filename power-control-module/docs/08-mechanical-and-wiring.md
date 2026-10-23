@@ -208,25 +208,40 @@ S/M slots (pin 4 spare); the connector families do not change.
 ## Harness
 
 From `python3 tools/budget.py` (20 °C copper; hot copper is ~15–20 % worse),
-module in the cab. "One-way" is the module-to-load distance; for the lights
-the drop includes a wired return to a chassis ground point.
+two-module JK layout ([13](13-multi-module-system.md)). "One-way" is the
+module-to-load distance; for the lights the drop includes a wired return to a
+chassis ground point.
 
-| Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |
-|---|---:|---:|---:|---:|---:|
-| Battery feed, engine bay to cab module | 60 | 6 | 2.5 | 0.19 | 1.4 |
-| Light bar (OUT1, M) | 20 | 10 | 3.5 | 0.46 | 3.4 |
-| Front pods (OUT2, M) | 12 | 12 | 3.0 | 0.38 | 2.8 |
-| Rear floods (OUT3, S) | 10 | 14 | 3.0 | 0.50 | 3.7 |
-| Rock lights (OUT4, S) | 6 | 16 | 3.0 | 0.47 | 3.5 |
-| ARB relay coil (AUX1) | 0.2 | 18 | 3.0 | 0.01 | 0.1 |
-| Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
+| Module | Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |
+|---|---|---:|---:|---:|---:|---:|
+| Front | Battery feed to the glovebox module | 60 | 6 | 3.0 | 0.23 | 1.7 |
+| Front | Light bar (OUT1, M) | 20 | 10 | 3.5 | 0.46 | 3.4 |
+| Front | Bumper pods (OUT2, M) | 12 | 12 | 3.0 | 0.38 | 2.8 |
+| Front | Ditch lights (OUT3, S) | 6 | 16 | 2.0 | 0.32 | 2.3 |
+| Front | Front rock lights (OUT4, S) | 3 | 16 | 2.5 | 0.20 | 1.5 |
+| Front | ARB relay coil (AUX1) | 0.2 | 18 | 3.0 | 0.01 | 0.1 |
+| Front | Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
+| Rear | Battery feed to the rear module, 8 AWG, at rating | 40 | 8 | 5.0 | 0.41 | 3.1 |
+| Rear | Same 8 AWG feed at the expected 21 A | 21 | 8 | 5.0 | 0.22 | 1.6 |
+| Rear | Battery feed to the rear module, 6 AWG, at rating | 40 | 6 | 5.0 | 0.26 | 1.9 |
+| Rear | Rear floods (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
+| Rear | Rear rock lights (OUT2, S) | 4 | 16 | 2.0 | 0.21 | 1.6 |
+| Rear | Fridge (OUT3, S) | 5 | 12 | 1.5 | 0.08 | 0.6 |
+| Rear | Camp lights (OUT4, S) | 4 | 16 | 3.0 | 0.32 | 2.3 |
+| Rear | Chase light (AUX1) | 1.5 | 18 | 1.5 | 0.09 | 0.7 |
+
+On the rear module the same connector set is fitted but partly used: J6
+carries only CAN1 in/out and ground (no vehicle buses, no panel power), the
+`IGN` in J5 comes through the front–rear trunk cable, and J7 drives the chase
+light.
 
 Rules:
 
-- **Fuse the battery feed at the battery**: 80 A MIDI/MEGA fuse or a
-  manual-reset breaker within ~300 mm of the post. Not an auto-reset
+- **Fuse each battery feed at the battery**: 80 A (front module) and 50 A
+  (rear module) MIDI/MEGA fuses or manual-reset breakers within ~300 mm of
+  the post. Not an auto-reset
   (type I) breaker — it would cycle a fault through the firewall. The module
-  protects its outputs; only that fuse protects the feed.
+  protects its outputs; only those fuses protect the feeds.
 - Size output wire for the channel's **hardware** trip, not its firmware
   setting ([03](03-output-channels.md#protection-layers)).
 - Return each load to a clean chassis point near the load; do not bring load

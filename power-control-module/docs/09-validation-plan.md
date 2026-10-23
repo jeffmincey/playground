@@ -87,6 +87,17 @@ rented test house or approximated as noted.
 | EV-4 | Engine-bay build: hot quench — module running at 90 °C, then splashed and dunked in ~10 °C water for 5 min | EN-2 | No water inside (the fording case) |
 | EV-5 | Engine-bay build: printed coupons with oil, coolant, brake fluid, fuel and dilute battery acid, 24 h at 80 °C | EN-2 | No softening, cracking or swelling beyond the gasket's tolerance |
 
+## Two-module system
+
+| ID | Test | Closes | Pass |
+|---|---|---|---|
+| SY-1 | Front module, rear module and panel on one bus with the real trunk cable; unpowered CAN-H to CAN-L resistance | FN-11 | ~60 Ω; every frame of both modules decodes with `can/pcm-jk.dbc` |
+| SY-2 | Peer signals: rear rules using `M0.VS2` and `M0.OUT4`; then unplug the front module | FN-17 | Rear follows within 300 ms; with M0 gone the values go stale within 300 ms and the rules fall back as documented |
+| SY-3 | Parked: IGN off, fridge on the rear module overnight | FN-18 | Front module sleeps between wake-ups; its average current ≤ 0.3 mA |
+| SY-4 | State-change burst: front rock lights switched on with the rear module asleep | FN-18 | Rear rock lights follow within 1 s |
+| SY-5 | Rear feed under 40 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
+| SY-6 | Ground offset between front and rear modules with all rear loads on | EL-9 | CAN common-mode within the transceiver's range; no error frames |
+
 ## Vehicle
 
 | ID | Test | Pass |

@@ -99,7 +99,9 @@ Conclusions:
   [07](07-firmware.md#system-level-limits)) covers that corner. Requirements
   for that build are in [08](08-mechanical-and-wiring.md#engine-bay-build).
 - The JK default — cab, printed shell, aluminium plate — leaves ~30 °C of
-  margin.
+  margin. For the two-module layout (front module inside a closed
+  glovebox, rear module in the cargo area) see
+  [13](13-multi-module-system.md#thermal).
 
 Thermal resistances are the weakest assumption in these tables. They are
 replaced with measured values in validation test TH-1.

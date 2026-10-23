@@ -15,7 +15,7 @@
 | D-9 | Reverse-battery blocking on logic and L channel only; S/M use PROFET ReverseON | Back-to-back FETs on every channel doubles power-stage parts for little benefit on LED loads | Proposed |
 | D-10 | Own protocol on 11-bit IDs, base `0x6A0`, with DBC | Simple to decode with any tool; CANopen keypad bridging can be a host function | Proposed |
 | D-11 | Rule engine is fixed function blocks, not a script | Verifiable; covers the stated use cases | Proposed |
-| D-12 | **Mount the JK module in the cab** | Lighting-only current; ~20 °C cooler; short CAN taps and dash runs; printed enclosure viable. See [11](11-jeep-jk-integration.md#mounting-location-cab). | Accepted (Q-5 answered) |
+| D-12 | **Mount the JK module in the cab** (now the front module, in the glovebox — D-22) | Lighting-only current; ~20 °C cooler; short CAN taps and dash runs; printed enclosure viable. See [11](11-jeep-jk-integration.md#mounting-location-cab). | Accepted (Q-5 answered) |
 | D-13 | **Printed ASA shell on a 6 mm aluminium base plate** (Bambu X1C) | Plate sinks the heat and takes the mounting loads; shell gives free-form connector placement. Printed-only fails thermally ([03](03-output-channels.md#thermal-check)). | Proposed |
 | D-14 | Fixed AUX bank: 4 × 5 A coil drivers on every power board | Compressor relay, winch contactor and indicators without spending main outputs | Proposed |
 | D-15 | ARB twin keeps ARB's relay, fuses and pressure switch; the module drives the coil | ~50 A under load exceeds the L rating; keeps ARB's tested loom; run detection from coil current | Accepted |
@@ -25,6 +25,10 @@
 | D-19 | Engine-bay build is a supported alternative: printed PAHT-CF shell on the aluminium plate (or a die-cast box), silicone gasket, compression limiters, M+ part on the light-bar slot for hot spots | Thermal model passes at 85 °C ambient and, with the M+ part, at a 105 °C hot spot; sealing a printed shell is the main risk and is tested (EV-1, EV-4). See [08](08-mechanical-and-wiring.md#engine-bay-build). | Proposed |
 | D-20 | Grade 1 (−40…+125 °C) electronics in every build | One BOM for both locations | Proposed |
 | D-21 | Thermal derating on estimated junction temperature, not fixed board thresholds | Same firmware works in the cab and the engine bay | Proposed |
+| D-22 | **Two-module JK system:** front module (address 0, `MMSS`) in the glovebox, rear module (address 1, `SSSS`) in the cargo area | Loads switched near where they are; trailer signals local to the rear; the front module keeps the vehicle taps. See [13](13-multi-module-system.md). | Proposed |
+| D-23 | Modules are peers sharing broadcast values (`M<address>.<signal>`); no master | No single point of failure; nothing new on the bus | Proposed |
+| D-24 | Parked-mode telemetry (10 s `Status` with outputs on, silent otherwise, bursts on change) | One module's overnight load must not hold the others awake | Proposed |
+| D-25 | Rear module on its own fused feed (8 AWG, 50 A) unless a rear auxiliary battery is fitted | Avoids feeding one module through another; `VBAT_EST` corrects for the feed drop | Proposed — Q-16 |
 
 ## Open questions
 
@@ -45,14 +49,17 @@ Answers change the design; listed with the default assumed until answered.
 | Q-11 | Winch model and its maximum current draw? | 8–12 k lb class, ≤ 500 A | Contactor choice (EV200 vs GV200 class), feed protection |
 | Q-12 | Keep the ARB rocker as the compressor switch, or move it to the panel? | Keep it (IN1), with its indicator on AUX3 | IN1/AUX3 allocation |
 | Q-13 | Under-dash space and firewall route on this JK? | Passenger side, existing grommet | Enclosure shape, harness lengths |
-| Q-14 | Actual temperatures at the candidate mounting spots (cab and engine bay), including a summer crawl and a heat soak after shutdown? | Cab 65 °C, engine bay 85 °C / 105 °C hot spot | Location choice, M vs M+ on the light-bar slot, enclosure |
+| Q-14 | Actual temperatures at the candidate mounting spots (glovebox, rear cargo area, engine bay), including a summer crawl and a heat soak after shutdown? | Cab 65 °C (+ closed-glovebox penalty), engine bay 85 °C / 105 °C hot spot | Location choice, M vs M+ on the light-bar slot, enclosure |
+| Q-15 | Where is the ARB twin mounted — under the hood or in the cargo area? | Under the hood → front module AUX1 | Which module drives the relay |
+| Q-16 | Rear auxiliary battery (with a DC-DC charger) planned? | No — rear module on its own feed from the starting battery | Rear feed, fridge shed thresholds |
+| Q-17 | Two-door or four-door JK? | Four-door (~5 m rear feed) | Rear feed gauge and drop |
 
 ## Roadmap
 
 | Phase | Scope |
 |---|---|
 | 0 — now | This design package: requirements, architecture, protocol, budgets |
-| 0.5 | **Sniff the JK** with a USB-CAN adapter in listen-only mode (CAN-IHS and the OBD port) and confirm D-18 / the OBD polling need; print a PLA mock-up of the module and panel to check under-dash space; log temperatures at the candidate spots for a week (Q-14). All three are cheap and settle questions before schematics freeze. |
+| 0.5 | **Sniff the JK** with a USB-CAN adapter in listen-only mode (CAN-IHS and the OBD port) and confirm D-18 / the OBD polling need; print PLA mock-ups of the module (glovebox and rear cargo area) and the panel to check the space; log temperatures at the candidate spots for a week (Q-14). All three are cheap and settle questions before schematics freeze. |
 | 1 | Schematics in KiCad for the logic board and the `MMSS` power board (with AUX bank); part selection locked; review |
 | 2 | Layout, fab, bring-up (BU-*), protection tests (PR-*) |
 | 3 | Firmware: protection + CAN protocol + rule engine + vehicle signal map; host config tool (Python) |

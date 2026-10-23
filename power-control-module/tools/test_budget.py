@@ -47,6 +47,24 @@ def test_printed_only_is_rejected_in_the_hot_engine_bay_even_at_expected_loads()
     assert not t["base_ok"]
 
 
+ASA_HDT_C = 100  # Bambu ASA heat deflection temperature at 0.45 MPa
+
+
+def test_front_module_in_a_closed_glovebox_fits_asa_at_expected_loads():
+    t = build_thermal("MMSS", "glovebox", "plate", "jk_front_expected")
+    assert t["ok"] and t["t_base_c"] < ASA_HDT_C, (t["tj_hottest_c"], t["t_base_c"])
+
+
+def test_closed_glovebox_at_full_rating_runs_an_asa_shell_too_hot():
+    # Documents why the glovebox needs venting or a metal mount for full-rating use.
+    assert build_thermal("MMSS", "glovebox", "plate", "rated")["t_base_c"] > ASA_HDT_C
+
+
+def test_rear_module_has_margin_even_without_the_plate():
+    t = build_thermal("SSSS", "rear_cargo", "printed", "rated")
+    assert t["ok"] and t["t_base_c"] < ASA_HDT_C
+
+
 def test_base_plate_beats_printed_only():
     for location in ("cab", "engine_bay"):
         plate = build_thermal("MMSS", location, "plate")["tj_hottest_c"]

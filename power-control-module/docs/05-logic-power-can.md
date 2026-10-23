@@ -194,5 +194,9 @@ least certain entry (not yet read from the G474 datasheet); measurement in
 test SL-1 replaces this table, and the G0B1 + MCP2518FD fallback above exists
 for the case where it does not fit.
 
+With two modules on the bus (the JK layout), parked-mode rules stop one
+module's overnight load from holding the other awake; the whole parked system
+draws about 0.5 mA ([13](13-multi-module-system.md#sleep-and-wake-with-two-modules)).
+
 The switch panel on CAN1 has its own supply and sleep mode (≤ 100 µA target,
 [08](08-mechanical-and-wiring.md#switch-panel)); it is not in this budget.

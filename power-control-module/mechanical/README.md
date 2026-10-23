@@ -24,7 +24,7 @@ matches the tested part.
 
 | Part | Material | Purpose |
 |---|---|---|
-| Module envelope 160 × 120 × 50 mm with connector stubs | PLA | Check the under-dash space and connector clearance on the JK |
+| Module envelope 160 × 120 × 50 mm with connector stubs | PLA | Check the glovebox and the rear cargo-area spot, including connector and harness clearance |
 | Panel envelope | PLA | Find a dash location and reach |
 
 ## Print profiles (starting points)

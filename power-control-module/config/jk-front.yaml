@@ -43,11 +43,11 @@ inputs:
   IN4: { name: winch_coil, mode: ACTIVE_HIGH, high_v: 4.0, low_v: 2.0 }   # contactor coil +
   IN5: { name: bar_toggle, mode: ACTIVE_LOW }
   IN6: { name: pods_toggle, mode: ACTIVE_LOW }
-  # Only if the CAN-IHS high-beam bit cannot be decoded. The JK headlamp feeds
-  # carry pulsed voltage (why some LED headlamps need anti-flicker harnesses),
-  # so the input averages over 50 ms instead of reading single samples.
-  IN7: { name: spare_high_beam_tap, mode: ACTIVE_HIGH, average_ms: 50 }
-  IN8: { name: spare, mode: DISABLED }
+  # Front turn circuits, sensed on the vehicle side of the keep-alive injectors
+  # (never the lamp side, which sits at keep-alive voltage). They carry turn and
+  # hazard only, so they drive the keep-alive rule and its flash-dip check.
+  IN7: { name: front_left_turn_sense, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
+  IN8: { name: front_right_turn_sense, mode: FREQUENCY, turn_band_hz: [0.8, 4.0] }
 
 # Vehicle signals. Entries with verified: false are skipped by the compiler
 # (treated as not configured) until a capture on this JK confirms them —
@@ -221,3 +221,24 @@ aux:
   AUX4:
     name: spare
     rating_a: 5
+
+# Lamp keep-alive (../docs/14-lamp-keep-alive-and-bluetooth.md). KA1 feeds the
+# injectors at the front lamps' turn input (EVO J3 orange wire, and the 239 J2
+# turn input if those stay active); the factory flasher still drives 12 V.
+# Level, limit and current band are placeholders until bench test KA-1.
+# The high-beam wire-tap fallback gave up IN7 for this; high beam comes from
+# CAN-IHS (VS3).
+keep_alive:
+  KA1:
+    name: front_turn_keep_alive
+    level_v: 6.0
+    current_limit_a: 0.5
+    expect_a: [0.005, 0.30]
+    # Each front flash must show up as a dip in keep-alive current (D_f intact).
+    dip_check_while: "IN7 is_on OR IN8 is_on"
+    rule:
+      behaviour: follow
+      condition: "IGN is_on OR IN7 is_on OR IN8 is_on"   # key on, or hazards with the key off
+      off_delay_s: 600
+  KA2:
+    name: spare

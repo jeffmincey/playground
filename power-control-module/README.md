@@ -27,9 +27,11 @@ not started. Part numbers are candidates until the BOM is frozen — see
 | Autonomy | Per-output rules on inputs, ignition, panel buttons, vehicle signals (speed, RPM, high beam), battery voltage, load current; timers and interlocks |
 | Compressor | ARB twin keeps its relay and pressure switch; the module drives the coil, interlocks it to the engine, detects running from coil current, stops on a continuous-run limit |
 | Winch | Isolator contactor armed from the panel, auto-disarmed when driving or after a timeout, hardwired override that works without the module, welded-contact detection |
+| Lamp keep-alive | 2 adjustable 5–8 V outputs injected into the turn/position circuits through diodes, so LED lamps with controllers (EVO J3) stay booted between flashes; the factory flasher stays in control |
+| Bluetooth | J-Link lamp modes and brightness: investigation plan, with a BLE bridge in the switch panel if the protocol allows |
 | Mounting | Glovebox and rear cargo area: ASA shells printed on a Bambu X1C over 6 mm aluminium heat-sink plates. Engine bay supported: PAHT-CF shell on the same plate, or a die-cast box |
 | Expansion | Up to 4 modules per bus (16 main outputs); modules share values as peers, no master |
-| Sleep current | ≤ 250 µA requirement per module, 193 µA estimated; ≈ 0.5 mA for the parked two-module system with its panel |
+| Sleep current | ≤ 250 µA requirement per module, 195 µA estimated; ≈ 0.5 mA for the parked two-module system with its panel |
 | Environment | Grade 1 (−40…+125 °C) parts; IP65 cab build, IP67 engine-bay build; ISO 16750 / ISO 7637 design targets |
 
 ## "Different flavors" of channel
@@ -60,6 +62,7 @@ fitted in each slot. Details in
 | [11-jeep-jk-integration](docs/11-jeep-jk-integration.md) | Mounting location, power, wired signals, CAN-IHS and OBD port, sniffing procedure |
 | [12-compressor-and-winch](docs/12-compressor-and-winch.md) | ARB twin integration, winch isolator options, wiring, rules |
 | [13-multi-module-system](docs/13-multi-module-system.md) | Glovebox + rear modules: allocation, power feeds, trunk cable, peer signals, sleep, thermal |
+| [14-lamp-keep-alive-and-bluetooth](docs/14-lamp-keep-alive-and-bluetooth.md) | 6 V lamp keep-alive injection, bench characterisation, diagnostics, Bluetooth investigation |
 
 ## Folder layout
 

@@ -134,3 +134,17 @@ aux:
   AUX2: { name: spare, rating_a: 5 }
   AUX3: { name: spare, rating_a: 5 }
   AUX4: { name: spare, rating_a: 5 }
+
+# Keep-alive for the rear lamps, only if the RIGID tail lights turn out to need
+# it (bench test KA-1, open question Q-19):
+# keep_alive:
+#   KA1:
+#     name: rear_turn_keep_alive
+#     level_v: 6.0
+#     current_limit_a: 0.5
+#     expect_a: [0.005, 0.30]
+#     dip_check_while: "IN3 is_on OR IN4 is_on"
+#     rule:
+#       behaviour: follow
+#       condition: "IGN is_on OR IN3 is_on OR IN4 is_on"
+#       off_delay_s: 600

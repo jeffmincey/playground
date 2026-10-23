@@ -96,5 +96,8 @@ datasheet before ordering.
 | CAN PHY | TI TCAN1042-Q1 / NXP TJA1042 | ×3; passive when unpowered |
 | Analog mux | 16:1, 3.3 V (e.g. TMUX1116 / 74HC4067 class) | Slow channels: OUT_SENSE, ID, NTC |
 | Vehicle-PHY load switch | Small 5 V load switch (e.g. TPS22918 class) | Off in sleep |
+| Keep-alive rail | 60 V buck ≤ 1 A (LMR3600x-Q1 class), feedback trimmed by an MCU DAC to 5–8 V | Logic board |
+| Keep-alive outputs | 2 × eFuse with adjustable limit and current monitor (TPS2595 class; not AEC-Q100 — prefer an automotive equivalent) | Logic board, to J7 pins 5–6 |
+| Injector diodes | Schottky, ≥ 3 A, ≥ 40 V, two per lamp input | In the inline injector adapters at the lamps |
 | EEPROM | 24AA02 / 24C02 class, I²C | Power-board calibration |
 | Connectors | Deutsch DT / DTP / DTHD flange-mount receptacles with pigtails, M6 + M5 studs on an insulated block | See [08](../docs/08-mechanical-and-wiring.md#connectors) |

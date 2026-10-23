@@ -1,4 +1,4 @@
-VERSION "pcm-protocol-0.2"
+VERSION "pcm-protocol-0.3"
 
 
 NS_ :
@@ -174,10 +174,14 @@ BO_ 1708 PCM0_Health: 8 PCM0
  SG_ Can2TxEnabled : 2|1@1+ (1,0) [0|1] "" HOST
  SG_ ObdPollingActive : 3|1@1+ (1,0) [0|1] "" HOST
  SG_ OtherTesterSeen : 4|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA1_On : 5|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA2_On : 6|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA_Fault : 7|1@1+ (1,0) [0|1] "" HOST
  SG_ Can1Tec : 8|8@1+ (1,0) [0|255] "" HOST
  SG_ Can1Rec : 16|8@1+ (1,0) [0|255] "" HOST
  SG_ ResetReason : 24|8@1+ (1,0) [0|255] "" HOST
  SG_ UptimeS : 32|24@1+ (1,0) [0|16777215] "s" HOST
+ SG_ KA_Current : 56|8@1+ (0.005,0) [0|1.275] "A" HOST
 
 
 BO_ 1712 PCM1_Command: 8 HOST
@@ -330,10 +334,14 @@ BO_ 1724 PCM1_Health: 8 PCM1
  SG_ Can2TxEnabled : 2|1@1+ (1,0) [0|1] "" HOST
  SG_ ObdPollingActive : 3|1@1+ (1,0) [0|1] "" HOST
  SG_ OtherTesterSeen : 4|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA1_On : 5|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA2_On : 6|1@1+ (1,0) [0|1] "" HOST
+ SG_ KA_Fault : 7|1@1+ (1,0) [0|1] "" HOST
  SG_ Can1Tec : 8|8@1+ (1,0) [0|255] "" HOST
  SG_ Can1Rec : 16|8@1+ (1,0) [0|255] "" HOST
  SG_ ResetReason : 24|8@1+ (1,0) [0|255] "" HOST
  SG_ UptimeS : 32|24@1+ (1,0) [0|16777215] "s" HOST
+ SG_ KA_Current : 56|8@1+ (0.005,0) [0|1.275] "A" HOST
 
 
 CM_ "Power control modules, addresses 0-1, default base ID 0x6A0; module n uses base + 0x10*n. Generated from pcm.dbc by tools/gen_dbc.py - edit pcm.dbc, not this file.";
@@ -387,6 +395,10 @@ CM_ SG_ 1708 Can2TxEnabled "The OBD-port transmit link is fitted and enabled in 
 CM_ SG_ 1724 Can2TxEnabled "The OBD-port transmit link is fitted and enabled in configuration.";
 CM_ SG_ 1708 OtherTesterSeen "Another diagnostic tester is active on the OBD port; polling is paused.";
 CM_ SG_ 1724 OtherTesterSeen "Another diagnostic tester is active on the OBD port; polling is paused.";
+CM_ SG_ 1708 KA_Fault "A keep-alive output tripped, or its current is outside the configured band.";
+CM_ SG_ 1724 KA_Fault "A keep-alive output tripped, or its current is outside the configured band.";
+CM_ SG_ 1708 KA_Current "Total keep-alive current, both outputs.";
+CM_ SG_ 1724 KA_Current "Total keep-alive current, both outputs.";
 
 BA_DEF_ BO_ "GenMsgCycleTime" INT 0 10000;
 BA_DEF_DEF_ "GenMsgCycleTime" 0;

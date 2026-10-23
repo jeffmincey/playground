@@ -36,3 +36,4 @@ matches the tested part.
 | Engine-bay brackets | PET-CF or PAHT-CF | 0.4–0.6 mm hardened steel | 6 | 60 % | Dry the filament first; metal inserts at every bolt |
 | Engine-bay shell (alternative build) | PAHT-CF | 0.6 mm hardened steel | ≥ 6, walls ≥ 3 mm | 100 % | Metal compression limiters at every bolt, silicone gasket, bolts into tapped holes in the plate; see the engine-bay build in doc 08 |
 | Panel bezel | ASA | 0.4 mm | 3 | 20 % | Light pipes or a thin diffuser layer over LEDs |
+| Keep-alive injector housings | PAHT-CF | 0.4–0.6 mm hardened steel | ≥ 4 | 100 % | Grille area: warm and wet; pot the diodes in silicone, sealed connectors both ends |

@@ -1,7 +1,8 @@
 # 05 — Logic board: supply, MCU, CAN
 
-The logic board is common to every power-board variant. It carries no load
-current.
+The logic board is common to every power-board variant. The only load
+current it carries is the lamp keep-alive rail (≤ 1 A at 5–8 V,
+[14](14-lamp-keep-alive-and-bluetooth.md#keep-alive-hardware-on-the-logic-board)).
 
 ## Block diagram
 
@@ -167,7 +168,7 @@ configuration, filled in after sniffing the actual vehicle
 |---|---|---|---|
 | **Run** | Any wake source | 50–100 mA (logic) | — |
 | **Idle-awake** | IGN off, all outputs off, timers running (e.g. courtesy timer) | 40–60 mA | Timers expire → Sleep |
-| **Sleep** | IGN off, outputs off, no CAN1 traffic for 30 s, no pending timers | ≈ 193 µA estimated | IGN high; CAN1 activity (transceiver remote wake); input change found by the 200 ms scan; RTC alarm |
+| **Sleep** | IGN off, outputs off, no CAN1 traffic for 30 s, no pending timers | ≈ 195 µA estimated | IGN high; CAN1 activity (transceiver remote wake); input change found by the 200 ms scan; RTC alarm |
 
 A rule may keep an output on with ignition off (e.g. rock lights at camp).
 Low-voltage load shed protects the battery in that case: default shed below
@@ -186,8 +187,9 @@ Sleep budget detail (`python3 tools/budget.py`):
 | Pulsed input scan, switch open | 8 | 2 | 16 |
 | MCU wake-ups for the scan | 1 | 20 | 20 |
 | VBAT sense divider, gated off | 1 | 1 | 1 |
+| Keep-alive buck and eFuses, disabled | 1 | 2 | 2 |
 | Reverse-polarity / TVS leakage | 1 | 5 | 5 |
-| **Total** | | | **193** |
+| **Total** | | | **195** |
 
 Requirement EL-7 is ≤ 250 µA. The MCU Stop-mode figure is the largest and
 least certain entry (not yet read from the G474 datasheet); measurement in

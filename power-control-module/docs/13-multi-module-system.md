@@ -43,7 +43,7 @@ flowchart LR
 | OUT3 | Ditch lights (S) | Fridge (S, low-voltage cut-off) |
 | OUT4 | Front rock lights (S, PWM) | Camp lights (S, PWM) |
 | AUX | ARB relay, winch contactor, rocker indicator, spare | Chase light, spares (ARB relay here instead if the compressor is mounted in the cargo area) |
-| Inputs | ARB rocker, ditch/bar/pods toggles, winch sense ×2, spare | Reverse, stop/turn ×2 and tail lamps from the tail-light connector, third brake light, camp switch |
+| Inputs | ARB rocker, ditch/bar/pods toggles, winch sense ×2, front turn sense ×2 (keep-alive) | Reverse, stop/turn ×2 and tail lamps from the tail-light connector, third brake light, camp switch |
 | Vehicle CAN | OBD port + CAN-IHS taps (short stubs from the glovebox) | None — reads them through M0 |
 | Power | 6 AWG, 80 A fuse at the battery | Own feed: 8 AWG, 50 A fuse at the battery — or a rear auxiliary battery |
 | Configuration | [`config/jk-front.yaml`](../config/jk-front.yaml) | [`config/jk-rear.yaml`](../config/jk-rear.yaml) |
@@ -141,7 +141,7 @@ a minute for ≤ 100 ms, ≈ 0.15 mA averaged. Selective-wake transceivers
 (TI TCAN1145-Q1, NXP TJA1145A — ISO 11898-2:2016 partial networking) would
 remove those wake-ups by waking only on configured frames; they are an option
 for a later revision. With everything parked, the system draws about
-2 × 193 µA + the panel's ≤ 100 µA ≈ 0.5 mA.
+2 × 195 µA + the panel's ≤ 100 µA ≈ 0.5 mA.
 
 ## Thermal
 

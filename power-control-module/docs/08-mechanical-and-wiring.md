@@ -153,7 +153,7 @@ series; pick the flange variant of each.
 | J4 | OUT1–OUT4 (M/S slots) | Deutsch DTP 4-way, size 12 contacts (~25 A) | 10–14 AWG |
 | J5 | Inputs | Deutsch DT 12-way, size 16 contacts | 18–20 AWG |
 | J6 | CAN (accessory, OBD port, CAN-IHS) + panel power | Deutsch DT 12-way | 20 AWG twisted pairs |
-| J7 | AUX outputs | Deutsch DT 6-way | 18 AWG |
+| J7 | AUX and keep-alive outputs | Deutsch DT 8-way | 18 AWG |
 
 On variants with an L slot, J3 carries that slot and J4 the remaining three
 S/M slots (pin 4 spare); the connector families do not change.
@@ -194,16 +194,18 @@ S/M slots (pin 4 spare); the connector families do not change.
 | 11 | GND | Vehicle-bus signal ground (OBD-II pin 5) |
 | 12 | — | Not connected |
 
-### J7 — AUX outputs
+### J7 — AUX and keep-alive outputs
 
-| Pin | Signal | JK load |
+| Pin | Signal | JK load (front module) |
 |---|---|---|
 | 1 | AUX1 | ARB relay coil (via ARB pressure switch) |
 | 2 | AUX2 | Winch contactor coil (via diode D1) |
 | 3 | AUX3 | ARB rocker indicator |
 | 4 | AUX4 | Spare |
-| 5 | GND | Return for loads that need one at the module |
-| 6 | GND | |
+| 5 | KA1 | Keep-alive to the front turn/position injectors ([14](14-lamp-keep-alive-and-bluetooth.md)) |
+| 6 | KA2 | Spare keep-alive (rear lamps if they need it) |
+| 7 | GND | Return for loads that need one at the module |
+| 8 | GND | |
 
 ## Harness
 

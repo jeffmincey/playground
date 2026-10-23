@@ -56,7 +56,7 @@ re-purposed by configuration, with no rework.
 | `ACTIVE_LOW` | Pull-up on, pull-down off | V < 2.0 V | Dash toggle to ground, pressure switch, door switch |
 | `ACTIVE_HIGH` | Pull-up off, pull-down on | V > 7.0 V (hysteresis to 5.0 V) | Trailer harness circuits, factory 12 V switches, ignition-switched feeds |
 | `ANALOG` | Both off (or pull-up on for resistive senders) | — reports voltage | 0.5–4.5 V pressure transducer (with module `+5V_SENS`), resistor-ladder multi-position switch |
-| `FREQUENCY` | As `ACTIVE_*` | — reports Hz and duty | Turn-signal decode, wheel-speed pulses (≤ 1 kHz) |
+| `FREQUENCY` | As `ACTIVE_*` | Signal present (steady, or toggling in the last 1.5 s); reports Hz and duty; decodes `INx_TURN` / `INx_BRAKE` | Turn-signal decode, wheel-speed pulses (≤ 1 kHz) |
 | `DISABLED` | Both off | — | Unused input; skipped by the sleep scan |
 
 Thresholds, debounce (default 20 ms on, 50 ms off) and inversion are
@@ -97,6 +97,10 @@ Notes from typical vehicles (verify on the target vehicle):
   a steady signal for > 700 ms as brake, a toggle inside `turn_band_hz` as
   turn, and turn + brake as both. With LED turn lamps the JK can hyperflash,
   which doubles the rate; the default band covers it.
+- **Keep-alive on a lamp circuit:** where a keep-alive is injected
+  ([14](14-lamp-keep-alive-and-bluetooth.md)), tap the input on the vehicle
+  side of the injection diode, never on the lamp side, which sits at the
+  keep-alive voltage.
 - **Lamp-out / trailer-detect pulses:** many vehicles and trailer-tow modules
   pulse the outputs for a few ms to check for a connected trailer. A 20 ms
   debounce rejects these; increase it if the module sees ghost triggers.
@@ -131,9 +135,12 @@ Front module (M0, glovebox):
 | IN4 | `ACTIVE_HIGH`, 4 V / 2 V | Winch contactor coil +, via 10 kΩ | AUX2 feedback (coil / override) |
 | IN5 | `ACTIVE_LOW` | Dash toggle "BAR" (physical fallback to the panel) | OUT1 light bar |
 | IN6 | `ACTIVE_LOW` | Dash toggle "PODS" | OUT2 bumper pods |
-| IN7 | `ACTIVE_HIGH` | Spare — high-beam wire tap if CAN-IHS does not decode | OUT1 interlock |
-| IN8 | `DISABLED` | Spare | — |
+| IN7 | `FREQUENCY` | Front left turn circuit, vehicle side of the keep-alive injector | KA1 rule and flash-dip check |
+| IN8 | `FREQUENCY` | Front right turn circuit, vehicle side of the keep-alive injector | KA1 rule and flash-dip check |
 | IGN | fixed | TIPM ignition fuse tap | Sleep, interlocks |
+
+(IN7 was the high-beam wire-tap fallback; high beam now comes only from
+CAN-IHS.)
 
 Rear module (M1, cargo area):
 

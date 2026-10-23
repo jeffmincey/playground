@@ -44,6 +44,8 @@ jump-start only, see EL-4).
 | FN-16 | Any output **shall** support optional feedback supervision (an input that must follow the real-world state of the load), reporting `FEEDBACK_MISMATCH`. |
 | FN-17 | Modules on one bus **shall** be able to use each other's broadcast values (inputs, outputs, currents, vehicle signals) in their rules, with a staleness timeout; no module is a master. |
 | FN-18 | A parked module **shall not** keep its peers awake: silent with all outputs off, low-rate telemetry otherwise, state changes sent so that a sleeping peer still receives them. |
+| FN-19 | The module **shall** provide 2 keep-alive outputs: an adjustable 5–8 V rail, current-limited per output, to hold lamp electronics booted between flashes. |
+| FN-20 | Turn-signal and hazard lamps **shall** stay driven by the vehicle's own flasher; a module failure **shall** leave them working (keep-alive is injected, never in series). |
 
 ## Electrical environment (12 V vehicle)
 
@@ -57,7 +59,7 @@ Test methods are in [09-validation-plan.md](09-validation-plan.md).
 | EL-4 | Survive 24 V jump start for 60 s with outputs commanded on. | ISO 16750-2 |
 | EL-5 | Survive −14 V reverse battery for 60 s without damage; logic and L channel **shall** block reverse current. | ISO 16750-2 |
 | EL-6 | Survive loss of module ground with outputs on, and with any output shorted to battery. | — |
-| EL-7 | Sleep current ≤ 250 µA with ignition off and outputs off (estimate 193 µA, [budget](../tools/budget.py)). | — |
+| EL-7 | Sleep current ≤ 250 µA with ignition off and outputs off (estimate 195 µA, [budget](../tools/budget.py)). | — |
 | EL-8 | Total continuous current ≤ 80 A through the battery stud (`LMSS`); 60 A for the JK `MMSS` build. | — |
 | EL-9 | CAN inputs survive ±27 V DC on CAN-H/CAN-L (short to battery). | ISO 11898-2 |
 | EL-10 | Vehicle CAN ports **shall** present no termination and high impedance when unpowered. | ISO 11898-2 |

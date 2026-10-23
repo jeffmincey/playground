@@ -98,6 +98,20 @@ rented test house or approximated as noted.
 | SY-5 | Rear feed under 40 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
 | SY-6 | Ground offset between front and rear modules with all rear loads on | EL-9 | CAN common-mode within the transceiver's range; no error frames |
 
+## Lamp keep-alive and Bluetooth
+
+| ID | Test | Closes | Pass |
+|---|---|---|---|
+| KA-1 | Bench characterisation of each lamp that needs keep-alive ([14](14-lamp-keep-alive-and-bluetooth.md#measure-first)) | FN-19 | `V_alive`, `V_glow`, current (warm and in a freezer), boot time recorded; keep-alive level chosen with margin both sides |
+| KA-2 | Injector on the vehicle, keep-alive on: first flash after idle, hazards, position lamps | FN-19 | No missing or late first flash; lamps dark at keep-alive |
+| KA-3 | TIPM behaviour with the injector fitted, keep-alive on and off | FN-20 | No DTC, no hyperflash, no lamp-out warning (fit `R_load` if needed) |
+| KA-4 | Module unpowered, and keep-alive wire unplugged | FN-20 | Turn, position and hazard lamps all work (boot delay allowed) |
+| KA-5 | Keep-alive wire shorted to ground; lamp unplugged; D_f opened | FN-19 | eFuse trips and `KA_Fault` is reported; current band and flash-dip checks raise their faults |
+| KA-6 | Parked with keep-alive rules: hazards with the key off | FN-18 | Keep-alive on from the second flash; off 10 min after the last |
+| BT-1 | Bluetooth scan of the headlight with lights on and at keep-alive only | — | Services and characteristics listed; reachability at keep-alive recorded |
+| BT-2 | Capture and map the J-Link app's writes for each mode and brightness step | — | Mapping table, including any pairing or authentication |
+| BT-3 | Replay from a development board | — | Each mapped setting reproduced, or the protocol shown to be authenticated (stop) |
+
 ## Vehicle
 
 | ID | Test | Pass |

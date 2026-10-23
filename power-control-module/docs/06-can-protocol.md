@@ -1,6 +1,6 @@
 # 06 — CAN protocol (accessory bus)
 
-Protocol version 0.2. The machine-readable definition is
+Protocol version 0.3. The machine-readable definition is
 [`can/pcm.dbc`](../can/pcm.dbc) (validated with `cantools`, strict mode);
 this page explains intent. If the two disagree, the DBC wins and this page
 is a bug.
@@ -8,7 +8,8 @@ is a bug.
 Changes from 0.1: AUX outputs (`Command` byte 7, `Status` bits 56–59, new
 `Aux` frame), eight inputs (`Status` byte 1, new `Inputs2` frame), vehicle
 signal telemetry (`VehicleA`/`VehicleB`), a `Health` frame, `Status` flags
-regrouped, and fault codes 11–12. Nothing implements 0.1, so there is no
+regrouped, and fault codes 11–12. Changes from 0.2: keep-alive state and
+current in `Health`. Nothing implements an earlier version, so there is no
 compatibility mode.
 
 ## Bus parameters
@@ -123,9 +124,12 @@ verified before a rule uses it ([11](11-jeep-jk-integration.md#sniffing-procedur
 | 2 | `Can2TxEnabled` | OBD `TXD` jumper fitted and polling enabled in configuration |
 | 3 | `ObdPollingActive` | Requests being sent |
 | 4 | `OtherTesterSeen` | Another tester is on the OBD port; polling paused |
+| 5–6 | `KA1_On`, `KA2_On` | Keep-alive outputs on ([14](14-lamp-keep-alive-and-bluetooth.md)) |
+| 7 | `KA_Fault` | A keep-alive output tripped, or its current is outside the configured band |
 | 8–23 | `Can1Tec`, `Can1Rec` | CAN1 transmit/receive error counters |
 | 24–31 | `ResetReason` | 0 power-on, 1 brown-out, 2 watchdog, 3 software, 4 pin, 5 firmware update |
 | 32–55 | `UptimeS` | Seconds since reset |
+| 56–63 | `KA_Current` | Total keep-alive current, 5 mA/bit |
 
 ## Timeouts and failsafe
 

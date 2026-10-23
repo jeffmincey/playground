@@ -111,7 +111,8 @@ value      = number | hysteresis(low, high)   ("< hysteresis(110, 150)": true
 for <ms>   = the comparison must have held for <ms> (long press, persistence)
 source     = local | remote
 local      = IN1..IN8, IGN, VIN1..VIN8, VS1..VS8 (vehicle signals), VBAT,
-             OUT1..OUT4 / AUX1..AUX4 (state), OUT1_I..AUX4_I (current, A),
+             IN1_TURN..IN8_TURN, IN1_BRAKE..IN8_BRAKE (FREQUENCY-mode decode),
+             OUT1..OUT4 / AUX1..AUX4 / KA1..KA2 (state), OUT1_I..AUX4_I (current, A),
              OUT1_FAULT..AUX4_FAULT (a fault is present),
              ENGINE_RUNNING, VBAT_SAG, VBAT_EST (derived)
 remote     = M<address>.<s>, where <s> is one of IN1..IN8, IGN, VS1..VS8,
@@ -150,6 +151,10 @@ modifiers  = on_delay, off_delay, min_off (cooldown),
   for 5 s when no RPM signal is configured or it is stale.
 - `VBAT_SAG` is derived: VBAT more than 1 V below its 10 s average — a large
   load such as a winch is pulling.
+- A `FREQUENCY`-mode input reads `is_on` while its signal is present —
+  steady, or toggling within the last 1.5 s — so a peer sees "turn or brake
+  activity" through `M<address>.INx`; `INx_TURN` and `INx_BRAKE` give the
+  decoded meaning locally.
 - `VBAT_EST` is derived: VBAT + module current × `feed_resistance_mohm` — the
   battery voltage seen through a long feed (the rear module). Without a feed
   resistance configured it equals VBAT. Load shed uses it.
@@ -192,6 +197,22 @@ frame receives the others. A module woken by bus activity listens for up to
 changes one of its rules. This keeps one module's overnight load (a fridge)
 from holding every other module awake
 ([13](13-multi-module-system.md#sleep-and-wake-with-two-modules)).
+
+## Keep-alive outputs
+
+`KA1` and `KA2` hold lamp electronics booted between flashes
+([14](14-lamp-keep-alive-and-bluetooth.md)). They take a rule like any other
+output, plus:
+
+| Field | Meaning |
+|---|---|
+| `level_v` | Keep-alive level at the lamp, 5.0–8.0 V; the DAC sets the rail ~0.3 V higher to cover the injection diode |
+| `current_limit_a` | eFuse limit, default 0.5 A |
+| `expect_a` | `[min, max]` current band while on; outside it → `KA_Fault` |
+| `dip_check_while` | Expression that is true while the factory flasher drives the lamps (e.g. the rear module's stop/turn inputs). During each flash the keep-alive current must dip; if it does not, the factory path (D_f) is open → `FEEDBACK_MISMATCH` |
+
+Keep-alive is off whenever the module is parked and the rule is false; it is
+never on in sleep.
 
 ## Feedback supervision
 

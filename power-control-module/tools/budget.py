@@ -298,6 +298,7 @@ SLEEP_ITEMS = [
     ("Pulsed input scan, switch open (0.35 mA x 0.5 %)", 8, 2),
     ("MCU wake-ups for the scan (~4 mA x 0.5 %)", 1, 20),
     ("VBAT sense divider, gated off", 1, 1),
+    ("Keep-alive buck and eFuses, disabled", 1, 2),
     ("Reverse-polarity / TVS leakage", 1, 5),
 ]
 

@@ -30,6 +30,9 @@
 | D-24 | Parked-mode telemetry (10 s `Status` with outputs on, silent otherwise, bursts on change) | One module's overnight load must not hold the others awake | Proposed |
 | D-25 | Rear module on its own fused feed (8 AWG, 50 A) unless a rear auxiliary battery is fitted | Avoids feeding one module through another; `VBAT_EST` corrects for the feed drop | Proposed — Q-16 |
 | D-26 | On this JK, tap CAN-IHS with a T-harness at the aftermarket radio interface's vehicle-side plug; rear lamp signals at the tail-light connector | The interface already occupies the radio connector; no factory wire is cut; the rear module sits next to the tail lights | Proposed — Q-18, Q-19 |
+| D-27 | Lamp keep-alive is **injected** through diodes into the factory turn/position circuits; the factory flasher keeps driving 12 V | Turn signals and hazards stay with the vehicle's flasher; module failure leaves the lamps working (boot delay only). See [14](14-lamp-keep-alive-and-bluetooth.md). | Proposed — Q-21 |
+| D-28 | Keep-alive rail on the logic board: buck, DAC-trimmed 5–8 V, two current-limited outputs on J7 | Low current; no change to the slot interface | Proposed |
+| D-29 | Bluetooth lamp control lives in the switch panel (BLE + CAN MCU), only if the J-Link protocol can be replayed; never in the load-switching module | Keeps a radio stack out of the module; the app stays the fallback | Open — investigation steps in 14 |
 
 ## Open questions
 
@@ -42,7 +45,7 @@ Answers change the design; listed with the default assumed until answered.
 | Q-3 | ~~Read the JK's buses?~~ **Answered:** yes, interface to the Jeep where possible | — | D-5, D-7, D-18 |
 | Q-4 | CAN host: build the printed switch panel, buy a CAN keypad, or toggles only for now? | Panel in phase 5; IN5/IN6 toggles meanwhile | Panel design, `on_host_loss` defaults |
 | Q-5 | ~~Engine bay or cab?~~ **Answered:** cab (D-12), enclosure printed on the X1C (D-13); engine bay remains a supported alternative (D-19) | — | Thermal, harness |
-| Q-6 | Bluetooth/phone configuration wanted? | No for rev A; companion board later | Logic board connector reservation |
+| Q-6 | Bluetooth wanted? **Partly answered:** yes, for the headlights' J-Link modes and brightness — investigation first (D-29) | BLE bridge in the switch panel if the protocol allows | Panel MCU choice |
 | Q-7 | Is a higher channel count expected (e.g. rock-light zones)? | Second module on the bus | Whether to lay out an `SSSS` variant |
 | Q-8 | Other vehicles in scope (JL, TJ, trucks) and their bus speeds? | JK only, others via config | Vehicle signal map, bitrate options |
 | Q-9 | Build quantity (1–2 or a small batch)? | 2 | Assembly method |
@@ -56,7 +59,9 @@ Answers change the design; listed with the default assumed until answered.
 | Q-17 | ~~Two-door or four-door?~~ **Answered:** two-door, ~4 m rear feed | — | Rear feed gauge and drop |
 | Q-18 | Which radio and vehicle interface are fitted (make, model; does it output reverse and VSS)? The shared conversation link could not be opened from the design environment. | A PAC RP4-CH11-class interface on the radio connector | CAN-IHS T-tap location, wired fallbacks for reverse and speed |
 | Q-19 | Which RIGID tail light (part number) — does it include the reverse lamp? Is a trailer harness fitted? | Reverse section present, no trailer harness | Rear module reverse and stop/turn taps |
-| Q-20 | Which J.W. Speaker headlight model (J2, Evo 2, …)? | J2 (no anti-flicker harness) | Only the high-beam wire-tap fallback |
+| Q-20 | Which J.W. Speaker headlight model? Bluetooth brightness control points to the EVO J3 (built-in turn signal). If so, do the 239 J2 grille lamps stay active too (J.W. Speaker says J3 turn signals plus factory-position turn lamps exceed DOT intensity)? | EVO J3; 239 J2 position function only | Keep-alive injection points, DOT compliance |
+| Q-21 | Bench results for the lamp that needs keep-alive: which input powers its electronics, `V_alive`, `V_glow`, keep-alive current (warm and cold), boot time, Bluetooth reachable at keep-alive? | Turn input, 6 V, ≤ 0.1 A per lamp | Keep-alive level, current limit, injector design |
+| Q-22 | Which phone (iOS or Android) is available for the Bluetooth capture? | Android (HCI snoop log is simplest) | Investigation method |
 
 ## Roadmap
 

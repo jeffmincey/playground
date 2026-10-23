@@ -205,7 +205,7 @@ accessories, fitted on every power-board variant.
 | Hardware trip | Internal current limit and thermal shutdown |
 | PWM | No — on/off only. Economised contactor coils must see steady DC. |
 | Inductive loads | The integrated output clamp absorbs relay-coil energy; economised coils suppress their own back-EMF; large plain solenoids get a freewheel diode at the coil |
-| Connector | J7 ([08](08-mechanical-and-wiring.md#j7--aux-outputs)) |
+| Connector | J7 ([08](08-mechanical-and-wiring.md#j7--aux-and-keep-alive-outputs)) |
 
 JK allocation: AUX1 ARB compressor relay, AUX2 winch isolator contactor,
 AUX3 rocker indicator, AUX4 spare ([12](12-compressor-and-winch.md)).

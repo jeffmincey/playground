@@ -92,19 +92,33 @@ room for LED drivers that draw more at low supply voltage.
 
 ### Rear floods (Hobbs halogen)
 
-The owner's photos show Hobbs-branded 4×6 sealed halogen work floods: a
-fluted flood lens marked "SEALED BEAM", a yoke bracket, and a black rubber
-cord printed with MSHA approval P-7K-123033, which Carol prints on its SJOOW
-(300 V) and SOOW (600 V) cords, 18–10 AWG. Hobbs' 4×6 range is 12 V at 35,
-35/65, 50 or 60 W and 24 V at 60 W; its 12 V 50 W flood spreads 80° × 30°.
-No rating label is visible in the photos, and an MSHA cord points to mining
-or industrial equipment, where 24 V is common, so confirm the voltage before
-wiring:
+The owner's photos and Hobbs' datasheet for its halogen swivel-mount
+off-highway lamps identify the floods as the 4×6 version: a
+vibration-resistant housing, a borosilicate glass sealed-beam lens that
+resists cracking from temperature shock, and a swivel bracket on a ½-inch
+stud. The face is 6.90 × 4.49 in (175 × 114 mm), the body about 3.1 in
+(80 mm) deep. Hobbs' standard termination is two 6-inch wires through the
+hollow stud and other terminations are built to order; these lamps carry a
+black rubber cord printed with MSHA approval P-7K-123033, which Carol prints
+on its SJOOW (300 V) and SOOW (600 V) cords, 18–10 AWG. The flood versions
+in the datasheet:
+
+| Part # | Voltage | Wattage | Beam |
+|---|---|---|---|
+| 71898 | 12 V | 50 W | Wide flood 80° × 30° |
+| 74001 | 12 V | 50 W | Narrow flood 55° × 30° |
+| 72540 | 24 V | 60 W | Wide flood 80° × 30° |
+| 75109 | 24 V | 60 W | Narrow flood 55° × 30° |
+
+The same family also has trap (35° × 35°) and spot beams and a 12 V
+35/65 W hi/lo driving lamp. No rating label is visible in the photos, and
+the MSHA cord points to mining or industrial equipment, where 24 V is
+common, so confirm which version these are before wiring:
 
 | Check | How | Result |
 |---|---|---|
-| Label | Part number or rating on the housing, or on the back of the sealed beam (remove the bezel) | e.g. Hobbs 71723: 12 V 50 W stud-mount flood |
-| Bench test | One lamp on a 12 V battery, clamp meter on one wire | 12 V lamp: full white light at ~2.7 A (35 W), ~3.9 A (50 W) or ~4.7 A (60 W). 24 V lamp: dim orange light at about 1.7 A — fit a 12 V sealed beam or a 4×6 LED insert |
+| Label | Part number on the housing, on the back of the sealed beam (remove the bezel), or on the packaging | 71898 / 74001: 12 V 50 W. 72540 / 75109: 24 V 60 W |
+| Bench test | One lamp on a 12 V battery, clamp meter on one wire | 12 V 50 W: full white light at ~3.9 A. 24 V 60 W: dim orange light at about 1.7 A — fit 12 V sealed beams or 4×6 LED inserts |
 | Cord | Gauge in the jacket print (e.g. "16/2 SJOOW") | 16 AWG or larger per lamp |
 
 OUT1 settings, assuming two 12 V 50 W lamps (`rear_floods` in
@@ -132,10 +146,11 @@ OUT1 settings, assuming two 12 V 50 W lamps (`rear_floods` in
   (adhesive-lined heat shrink or a DT 2-way). On the photographed housing
   the cord entry shows a gap and a torn seal: reseal it with a cable gland
   or an adhesive-lined boot before the lamp goes outside.
-- **Mounting:** with glass sealed beams these lamps are heavy, and a hot
-  filament dislikes the shock of a slammed tailgate. Prefer a fixed mount,
-  such as the rear bumper or a body bracket, over the tailgate or spare
-  carrier. 4×6 LED inserts (typically 1–3 A each, no filament inrush,
+- **Mounting:** each lamp bolts through its swivel bracket on the ½-inch
+  stud. The housings are built for off-highway equipment vibration, so the
+  tailgate or spare carrier will do; a fixed mount such as the rear bumper
+  or a body bracket still spares the hot filaments the shock of a slammed
+  tailgate. 4×6 LED inserts (typically 1–3 A each, no filament inrush,
   indifferent to vibration) are the alternative; with them, re-check the
   soft start (an LED driver may not follow PWM) and the open-load
   threshold.

@@ -50,9 +50,9 @@ obd_polling:
 
 outputs:
   OUT1:
-    name: rear_floods        # Hobbs 4x6 sealed halogen work floods. Assumed two 12 V
-    class: S                 # 50 W lamps (~8 A) until the label or a 12 V bench test
-    rating_a: 10             # confirms voltage and wattage (doc 13)
+    name: rear_floods        # Hobbs 4x6 halogen swivel-mount floods. Assumed two 12 V
+    class: S                 # 50 W lamps (71898/74001, ~8 A); 24 V 60 W versions
+    rating_a: 10             # (72540/75109) exist: check the label or bench-test (doc 13)
     pwm: { frequency_hz: 200, default_duty: 100 }  # halogen dims cleanly
     soft_start_ms: 300       # warms the filaments: cold, they draw ~10x running current
     inrush_ms: 300           # instantaneous limit at the hardware level during the ramp

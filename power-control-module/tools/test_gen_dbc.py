@@ -6,7 +6,7 @@ from gen_dbc import SOURCE, STRIDE, generate
 
 
 def frame_ids(text):
-    return [int(m) for m in re.findall(r"^BO_ (\d+) ", text, re.M)]
+    return [int(m) for m in re.findall(r"^BO_ (\d+) ", text, re.MULTILINE)]
 
 
 def test_two_modules_repeat_every_frame_at_the_next_address():

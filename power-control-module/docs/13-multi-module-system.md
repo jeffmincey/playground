@@ -52,7 +52,8 @@ flowchart LR
 ### RIGID Chase 90133
 
 A rear-facing pod: red halo with trail, brake and strobe functions, a white
-reverse light and a downward courtesy light. RIGID's installation sheet
+reverse light and a downward courtesy light.
+[RIGID's installation sheet](../reference/rigid-chase-installation-sheet-PKG-IS-215-A.pdf)
 (PKG-IS-215-A) gives the wire map and the current of each function. Every
 function has its own feed wire; there is no separate power wire. The sheet
 says nothing about which function wins when several are on, so SY-7 records
@@ -92,11 +93,13 @@ room for LED drivers that draw more at low supply voltage.
 
 ### Rear floods (Hobbs halogen)
 
-The owner's photos and Hobbs' datasheet for its halogen swivel-mount
-off-highway lamps identify the floods as the 4×6 version: a
-vibration-resistant housing, a borosilicate glass sealed-beam lens that
-resists cracking from temperature shock, and a swivel bracket on a ½-inch
-stud. The face is 6.90 × 4.49 in (175 × 114 mm), the body about 3.1 in
+The owner's photos ([lens](../reference/rear-flood-front-IMG_4866.jpg),
+[housing](../reference/rear-flood-back-IMG_4865.jpg)) and
+[Hobbs' datasheet](../reference/hobbs-halogen-swivel-mount-lamps.png) for
+its halogen swivel-mount off-highway lamps identify the floods as the 4×6
+version: a vibration-resistant housing, a borosilicate glass sealed-beam
+lens that resists cracking from temperature shock, and a swivel bracket on
+a ½-inch stud. The face is 6.90 × 4.49 in (175 × 114 mm), the body about 3.1 in
 (80 mm) deep. Hobbs' standard termination is two 6-inch wires through the
 hollow stud and other terminations are built to order; these lamps carry a
 black rubber cord printed with MSHA approval P-7K-123033, which Carol prints

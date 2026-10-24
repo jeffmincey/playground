@@ -3,8 +3,8 @@
 from budget import (
     CLASSES,
     SLEEP_ITEMS,
-    TJ_MAX_C,
     TJ_MARGIN_C,
+    TJ_MAX_C,
     build_thermal,
     ipc2221_width_mm,
     wire_drop_v,

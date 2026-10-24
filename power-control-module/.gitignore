@@ -1,5 +1,8 @@
 __pycache__/
 .pytest_cache/
+# Phone originals carry the GPS position: commit the copy from tools/heic_to_jpg.py
+*.heic
+*.HEIC
 # KiCad local state and backups
 *.kicad_prl
 *-backups/

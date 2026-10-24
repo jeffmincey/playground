@@ -77,9 +77,13 @@ power-control-module/
 ├── hardware/              # KiCad projects (planned structure + layout rules)
 ├── firmware/              # firmware (planned structure)
 ├── mechanical/            # enclosure and bracket CAD for the X1C (planned)
+├── reference/             # source documents and photos behind the JK decisions
 └── tools/
     ├── budget.py          # thermal, copper, harness and sleep-current budgets
     ├── gen_dbc.py         # multi-module DBC from can/pcm.dbc
+    ├── check_config.py    # config files against the rule grammar
+    ├── check_links.py     # links and anchors in the docs
+    ├── heic_to_jpg.py     # metadata-free JPEG copies of phone photos
     └── test_*.py
 ```
 
@@ -94,7 +98,9 @@ python3 tools/budget.py --build LMSS --location engine_bay --enclosure alu
 python3 tools/budget.py --build M+MSS --location engine_bay_hot --scenario jk_expected
 python3 tools/budget.py --build SSSS --location tuffy --scenario jk_rear_expected --aux rear
 python3 tools/gen_dbc.py --modules 2 --out can/pcm-jk.dbc   # after editing can/pcm.dbc
-python3 -m pytest tools                    # margin and generator checks (pytest from the repo's dev env)
+python3 tools/check_config.py              # config/*.yaml against the rule grammar (needs PyYAML)
+python3 tools/check_links.py               # links and anchors in the docs
+python3 -m pytest tools                    # all of the above as tests (pytest from the repo's dev env)
 ```
 
 Decode logged CAN traffic with the DBC, e.g. with

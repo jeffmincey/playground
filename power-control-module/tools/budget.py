@@ -144,7 +144,7 @@ SCENARIOS = {
     "jk_expected": [20, 12, 8, 4],
     # Two-module JK, front: light bar, bumper pods, ditch lights, front rock lights.
     "jk_front_expected": [20, 12, 6, 3],
-    # Two-module JK, rear: rear flood, rear rock lights, RIGID Chase courtesy
+    # Two-module JK, rear: halogen rear floods, rear rock lights, RIGID Chase courtesy
     # (green wire), camp lights. No fridge on this JK.
     "jk_rear_expected": [8, 4, 0.3, 4],
 }
@@ -272,7 +272,7 @@ EXAMPLE_LOADS = [
     ("Front", "Winch contactor coil, pull-in (AUX2)", 3.8, 18, 3.0, False),
     ("Rear", "Battery feed to the rear module, 10 AWG, at the 30 A fuse", 30, 10, 4.0, False),
     ("Rear", "Same 10 AWG feed at the expected 20 A", 20, 10, 4.0, False),
-    ("Rear", "Rear flood (OUT1, S)", 8, 14, 1.5, True),
+    ("Rear", "Rear floods, two 12 V 50 W halogen (OUT1, S)", 8, 14, 1.5, True),
     ("Rear", "Rear rock lights (OUT2, S)", 4, 16, 2.0, True),
     ("Rear", "Camp lights (OUT4, S)", 4, 16, 3.0, True),
     # All five Chase functions on: 0.3 + 1.3 + 1.3 + 0.7 + 0.3 A. Conservative:

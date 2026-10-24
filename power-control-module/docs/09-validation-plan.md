@@ -99,6 +99,7 @@ rented test house or approximated as noted.
 | SY-5 | Rear feed under 25 A: battery voltage estimate vs. a meter at the battery | — | `VBAT_EST` within 0.1 V |
 | SY-6 | Ground offset between front and rear modules with all rear loads on | EL-9 | CAN common-mode within the transceiver's range; no error frames |
 | SY-7 | RIGID Chase on the rear module: each of its five functions alone, then trail + brake, reverse + brake, brake while strobing, and all five on | FN-3 | Each function lights as RIGID's sheet describes and draws within ±30 % of its listed 14 V current (0.3 / 1.3 / 1.3 / 0.7 / 0.3 A); the sheet gives no priority between functions, so record which mode wins in each combination — the brake must always show (keep the strobe interlock, add others if needed) |
+| SY-8 | Rear floods from cold (lamps soaked at ambient, and once at ≤ 0 °C): 20 switch-ons with 1 s off between, at 12.5 V and 14.2 V | FN-5 | No e-fuse trip and no PROFET thermal shutdown; inrush peak and duration and the steady pair current recorded; `open_load_a` set from the measurement and one lamp unplugged raises `OPEN_LOAD` |
 | EMC-1 | AM and FM reception and speaker noise on the head unit with every PWM output running, the keep-alive rail on and the engine idling | — | No new audible whine or reception loss compared with the modules unpowered |
 
 ## Lamp keep-alive and Bluetooth

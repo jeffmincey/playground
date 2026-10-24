@@ -75,7 +75,7 @@ Naming is the slot classes in order. Every variant also carries the AUX bank.
 | **`MMSS`** (JK default, laid out for rev A) | 20 + 20 + 10 + 10 | 60 A | JK front module: light bar, pods, ditch lights, front rock lights; compressor and winch on AUX |
 | `LMSS` | 40 + 20 + 10 + 10 | 80 A | A single-motor compressor powered directly from the L slot |
 | `MMMM` | 4 × 20 | 80 A | Heavier lighting |
-| `SSSS` | 4 × 10 | 40 A | JK rear module: rear flood, RIGID Chase courtesy, rear rock and camp lights, with the Chase on AUX; rock-light zones, accessories |
+| `SSSS` | 4 × 10 | 40 A | JK rear module: halogen rear floods, RIGID Chase courtesy, rear rock and camp lights, with the Chase on AUX; rock-light zones, accessories |
 | `LLSS` | 40 + 40 + 10 + 10 | 100 A | Exceeds EL-8; needs a larger stud and feed. Not planned. |
 
 Total current is limited by the battery stud, feed cable and board copper

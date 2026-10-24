@@ -27,7 +27,7 @@ flowchart LR
     M0 -.->|"listen"| JEEP["OBD port,<br/>CAN-IHS"]
     DASH["ARB rocker, toggles,<br/>winch sense, front turn sense"] --> M0
     M1 -->|"AUX + OUT3"| CH["RIGID Chase 90133"]
-    M1 --> RL["Rear flood,<br/>rear rock lights and camp lights (if fitted)"]
+    M1 --> RL["Rear floods (Hobbs halogen),<br/>rear rock lights and camp lights (if fitted)"]
     TRL["Tail-light harness,<br/>third brake light, camp switch"] --> M1
 ```
 
@@ -37,8 +37,8 @@ flowchart LR
 |---|---|---|
 | Location | Glovebox (passenger side, cab) | Inside the Tuffy 282-01 cargo enclosure, on a wall clear of the lid and shelves |
 | Address / IDs | 0 → `0x6A0–0x6AF` | 1 → `0x6B0–0x6BF` |
-| Variant | `MMSS` | `SSSS` — the rear flood needs a main output, so an AUX-only build is no longer an option |
-| OUT1 | Light bar (M) | Rear flood (S) |
+| Variant | `MMSS` | `SSSS` — the rear floods need a main output, so an AUX-only build is no longer an option |
+| OUT1 | Light bar (M) | Rear floods: Hobbs 4×6 halogen (S, soft start) |
 | OUT2 | Bumper pods (M) | Rear rock lights (S, PWM) — placeholder |
 | OUT3 | Ditch lights (S) | Chase courtesy light, green wire (S) |
 | OUT4 | Front rock lights (S, PWM) | Camp lights (S, PWM) — placeholder |
@@ -90,13 +90,63 @@ room for LED drivers that draw more at low supply voltage.
   tailgate side for service. The Chase mounts on 1.75" or 2" tube with its
   clamp, or on a flat surface with its universal bracket.
 
+### Rear floods (Hobbs halogen)
+
+The owner's photos show Hobbs-branded 4×6 sealed halogen work floods: a
+fluted flood lens marked "SEALED BEAM", a yoke bracket, and a black rubber
+cord printed with MSHA approval P-7K-123033, which Carol prints on its SJOOW
+(300 V) and SOOW (600 V) cords, 18–10 AWG. Hobbs' 4×6 range is 12 V at 35,
+35/65, 50 or 60 W and 24 V at 60 W; its 12 V 50 W flood spreads 80° × 30°.
+No rating label is visible in the photos, and an MSHA cord points to mining
+or industrial equipment, where 24 V is common, so confirm the voltage before
+wiring:
+
+| Check | How | Result |
+|---|---|---|
+| Label | Part number or rating on the housing, or on the back of the sealed beam (remove the bezel) | e.g. Hobbs 71723: 12 V 50 W stud-mount flood |
+| Bench test | One lamp on a 12 V battery, clamp meter on one wire | 12 V lamp: full white light at ~2.7 A (35 W), ~3.9 A (50 W) or ~4.7 A (60 W). 24 V lamp: dim orange light at about 1.7 A — fit a 12 V sealed beam or a 4×6 LED insert |
+| Cord | Gauge in the jacket print (e.g. "16/2 SJOOW") | 16 AWG or larger per lamp |
+
+OUT1 settings, assuming two 12 V 50 W lamps (`rear_floods` in
+[`config/jk-rear.yaml`](../config/jk-rear.yaml)):
+
+- **Current:** ~7.8 A at 12.8 V, ~8.3 A at 14.2 V — inside the S slot's
+  10 A rating and the 8 A the budgets already assumed.
+- **Cold-filament inrush:** a cold tungsten filament draws roughly ten times
+  its running current until it heats up — about 80 A for the pair. Switched
+  straight on, that trips the firmware's instantaneous limit (4 × rating)
+  and drives the PROFET into its own current limit. OUT1 therefore ramps on
+  with PWM over 300 ms (`soft_start_ms`), which warms the filaments first,
+  with the instantaneous limit held at the hardware level for the same time
+  (`inrush_ms`). The ramp also spares the filaments. SY-8 measures the real
+  inrush; if the S cell still current-limits or overheats, the fallbacks are
+  an M cell in slot 1 or LED inserts.
+- **Dimming:** halogen follows PWM cleanly (unlike LED drivers with their
+  own electronics), so OUT1 can also run dimmed as an area light; the
+  default is 100 %.
+- **Supply limit:** `max_supply_v: 16.0` — a 12 V filament on 24 V draws
+  about 1.5 × its current at nearly three times its power, and burns out.
+- **One lamp out:** after SY-8, set `open_load_a` to ~75 % of the measured
+  pair current, so one dead lamp of the two raises `OPEN_LOAD`.
+- **Wiring:** join each lamp cord to the 14 AWG run at a sealed splice
+  (adhesive-lined heat shrink or a DT 2-way). On the photographed housing
+  the cord entry shows a gap and a torn seal: reseal it with a cable gland
+  or an adhesive-lined boot before the lamp goes outside.
+- **Mounting:** with glass sealed beams these lamps are heavy, and a hot
+  filament dislikes the shock of a slammed tailgate. Prefer a fixed mount,
+  such as the rear bumper or a body bracket, over the tailgate or spare
+  carrier. 4×6 LED inserts (typically 1–3 A each, no filament inrush,
+  indifferent to vibration) are the alternative; with them, re-check the
+  soft start (an LED driver may not follow PWM) and the open-load
+  threshold.
+
 ## Power
 
 No rear battery and no fridge, so the rear module's own feed only has to
 carry lights. The rear loads come to about 20 A with everything fitted and on
-at once (flood 8 A assumed, rock lights 4 A, camp lights 4 A, Chase 3.9 A),
-so the default feed drops from 8 AWG / 50 A to **10 AWG with a 30 A fuse**
-(or manual-reset breaker) at the battery:
+at once (floods 8 A for two 12 V 50 W lamps, rock lights 4 A, camp lights
+4 A, Chase 3.9 A), so the default feed drops from 8 AWG / 50 A to **10 AWG
+with a 30 A fuse** (or manual-reset breaker) at the battery:
 
 | Module | Run | Current (A) | AWG | One-way (m) | Drop (V) | Drop at 13.5 V (%) |
 |---|---|---:|---:|---:|---:|---:|
@@ -148,7 +198,7 @@ in configuration and reads theirs. Rules then use a peer's values as
 
 | Rule on the rear module | Uses |
 |---|---|
-| Chase reverse light and rear flood off above 15 km/h | `M0.VS2` — vehicle speed decoded by the front module |
+| Chase reverse light and rear floods off above 15 km/h | `M0.VS2` — vehicle speed decoded by the front module |
 | Rear rock lights follow the front rock lights | `M0.OUT4` |
 | ENGINE_RUNNING on the rear module | `M0.VS1` (RPM) |
 
@@ -244,8 +294,8 @@ the module (assumed +4 K/W); the closed steel Tuffy enclosure as +2 K/W.
 
 ## Open questions for this layout
 
-Q-23 (whether rear rock lights and camp lights will be fitted; the rear
-flood is confirmed, so the build stays `SSSS`) — see
+Q-23 (the rear floods' voltage, wattage, count and mounting; whether rear
+rock lights and camp lights will be fitted; the build stays `SSSS`) — see
 [10](10-decisions-and-open-questions.md#open-questions). Answered: compressor
 in the engine bay (Q-15), no rear battery and no fridge (Q-16), two-door
 (Q-17), the Chase's wire map from RIGID's sheet (Q-24).

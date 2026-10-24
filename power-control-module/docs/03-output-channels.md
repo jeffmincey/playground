@@ -151,6 +151,13 @@ capacitance and either flicker or ignore PWM. Configure those outputs for
 soft-start only; use dimming on simple LED strips, rock lights and pods that
 are known to dim.
 
+Halogen and other filament lamps are the opposite case: they dim cleanly,
+and they need the soft start. A cold filament draws roughly ten times its
+running current, so a PWM ramp of a few hundred milliseconds, with the
+instantaneous trip blanked for the same time, keeps the switch out of its
+current limit and spares the filament — the JK rear floods run this way
+([13](13-multi-module-system.md#rear-floods-hobbs-halogen)).
+
 ## L cell (discrete MOSFETs + smart driver)
 
 ```

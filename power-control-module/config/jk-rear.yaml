@@ -1,8 +1,8 @@
 # Example configuration: Jeep JK two-module system, REAR module.
 # Power board variant SSSS, module address 1, mounted inside the Tuffy 282-01
 # cargo enclosure. Drives the RIGID Chase 90133 pod (AUX1-4 and OUT3) and the
-# rear flood light (OUT1), with slots for rear rock lights and camp lights if
-# those get fitted.
+# Hobbs halogen rear floods (OUT1), with slots for rear rock lights and camp
+# lights if those get fitted.
 # Lamp signals come from the factory tail-light and third-brake-light harnesses.
 # Vehicle signals (speed, RPM) come from the front module (jk-front.yaml) over
 # the accessory bus as M0.<signal>.
@@ -50,9 +50,14 @@ obd_polling:
 
 outputs:
   OUT1:
-    name: rear_flood         # lamp not chosen yet: set rating_a to ~1.5x its current,
-    class: S                 # and max_supply_v: 16.0 if it is rated for 12 V only
-    rating_a: 10
+    name: rear_floods        # Hobbs 4x6 sealed halogen work floods. Assumed two 12 V
+    class: S                 # 50 W lamps (~8 A) until the label or a 12 V bench test
+    rating_a: 10             # confirms voltage and wattage (doc 13)
+    pwm: { frequency_hz: 200, default_duty: 100 }  # halogen dims cleanly
+    soft_start_ms: 300       # warms the filaments: cold, they draw ~10x running current
+    inrush_ms: 300           # instantaneous limit at the hardware level during the ramp
+    max_supply_v: 16.0       # a 12 V filament at 24 V burns out
+    # open_load_a: ~75 % of the pair current measured in SY-8, so one dead lamp is flagged
     on_host_loss: "RELEASE"
     shed_priority: 2
     shed_ign_off: true

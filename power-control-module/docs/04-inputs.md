@@ -146,7 +146,7 @@ Rear module (M1, cargo area):
 
 | Input | Mode | Wired to | Used by |
 |---|---|---|---|
-| IN1 | `ACTIVE_HIGH` | Reverse wire at the factory tail-light connector | Chase reverse light (AUX4), rear flood (OUT1) |
+| IN1 | `ACTIVE_HIGH` | Reverse wire at the factory tail-light connector | Chase reverse light (AUX4), rear floods (OUT1) |
 | IN2 | `ACTIVE_HIGH` | Third-brake-light feed on the spare-tire carrier (verify brake-only) | Chase brake (AUX2); holds the Chase strobe off |
 | IN3 | `FREQUENCY` | Left stop/turn at the tail-light connector | Turn / brake decode |
 | IN4 | `FREQUENCY` | Right stop/turn at the tail-light connector | Turn / brake decode |

@@ -162,7 +162,7 @@ S/M slots (pin 4 spare); the connector families do not change.
 
 | Pin | Signal | Front module (`MMSS`) | Rear module (`SSSS`) |
 |---|---|---|---|
-| 1 | OUT1 | Light bar (M) | Rear flood (S) |
+| 1 | OUT1 | Light bar (M) | Rear floods, Hobbs halogen (S) |
 | 2 | OUT2 | Bumper pods (M) | Rear rock lights (S), if fitted |
 | 3 | OUT3 | Ditch lights (S) | RIGID Chase green, courtesy (S) |
 | 4 | OUT4 | Front rock lights (S) | Camp lights (S), if fitted |
@@ -225,7 +225,7 @@ chassis ground point.
 | Front | Winch contactor coil, pull-in (AUX2) | 3.8 | 18 | 3.0 | 0.24 | 1.8 |
 | Rear | Battery feed to the rear module, 10 AWG, at the 30 A fuse | 30 | 10 | 4.0 | 0.39 | 2.9 |
 | Rear | Same 10 AWG feed at the expected 20 A | 20 | 10 | 4.0 | 0.26 | 1.9 |
-| Rear | Rear flood (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
+| Rear | Rear floods, two 12 V 50 W halogen (OUT1, S) | 8 | 14 | 1.5 | 0.20 | 1.5 |
 | Rear | Rear rock lights (OUT2, S) | 4 | 16 | 2.0 | 0.21 | 1.6 |
 | Rear | Camp lights (OUT4, S) | 4 | 16 | 3.0 | 0.32 | 2.3 |
 | Rear | RIGID Chase, all five functions on (AUX1-4, OUT3) | 3.9 | 18 | 2.5 | 0.41 | 3.0 |

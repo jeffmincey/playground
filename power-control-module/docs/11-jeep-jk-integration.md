@@ -16,6 +16,7 @@ must be confirmed on the actual vehicle before a rule depends on it.
 | J.W. Speaker LED headlights — Bluetooth brightness control points to the **EVO J3** (to confirm, Q-20) | Factory headlamp circuits; the J3 harness also takes the factory front turn-signal plug (built-in turn signal and position light) | High-beam state comes from the CAN-IHS lamp message, which follows the stalk request and does not care what lamps are fitted; a wire tap would need `average_ms` (the JK drives these circuits with pulsed voltage), and no input is reserved for it in the current allocation. The J3's turn input gets the **keep-alive** so it does not reboot on every flash, and its Bluetooth modes are the subject of the investigation in [14](14-lamp-keep-alive-and-bluetooth.md). |
 | J.W. Speaker 239 J2 LED front turn signals | Integrated anti-flicker, per J.W. Speaker | J.W. Speaker notes some JKs still hyperflash with LED lamps; the turn decoder's 0.8–4 Hz band covers both rates. With J3 headlights, J.W. Speaker says J3 turn signals plus factory-position turn lamps exceed DOT intensity — decide which set flashes (Q-20). |
 | RIGID Chase 90133 (red) | Rear-facing pod: red halo (trail, brake, strobe), white reverse light, downward courtesy light. RIGID sheet PKG-IS-215-A: red trail 0.3 A, white brake 1.3 A, yellow strobe 1.3 A, blue reverse 0.7 A, green courtesy 0.3 A, black ground; 9–15 V only | Driven by the rear module (AUX1–4 and OUT3) from the factory lamp signals ([13](13-multi-module-system.md#rigid-chase-90133)), with a 16 V supply limit on every Chase output because 24 V damages it. The factory tail lights stay; the rear module taps reverse, stop/turn and tail at their connectors, and the inputs' debounce rejects the JK's lamp-check pulses. |
+| Rear floods | Hobbs 4×6 sealed halogen work floods on Carol SJOOW/SOOW cords (owner's photos); no rating label visible. Hobbs' 4×6 range is 12 V 35–60 W or 24 V 60 W | Rear module OUT1 with a 300 ms soft start for the cold-filament inrush, a 16 V supply limit and a one-lamp-out check ([13](13-multi-module-system.md#rear-floods-hobbs-halogen)); voltage and wattage to confirm (Q-23) |
 | Transmission | Not stated | Not needed: reverse comes from the lamp circuit either way |
 
 ## Summary
@@ -192,7 +193,7 @@ stays off.
 |---|---|
 | Light bar only with high beams; drops with them when dipping for oncoming traffic (optional) | CAN-IHS high beam |
 | Off-road lights auto-off above a set speed | Vehicle speed |
-| Rear flood on in reverse, 60 s off-delay, off above 15 km/h | Reverse (wire), speed |
+| Rear floods on in reverse, 60 s off-delay, off above 15 km/h | Reverse (wire), speed |
 | Rock lights on with a door open (courtesy), off above 15 km/h | Door status (to be found), speed |
 | Compressor only with the engine running | RPM, or VBAT fallback |
 | Winch isolator auto-disarm when driving | Vehicle speed |
